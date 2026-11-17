@@ -9,6 +9,9 @@
 //! XSD gate does not apply here (different release namespace; the 26.11
 //! schemas would reject these roots by design).
 
+// Tests panic on broken assumptions — that is the job description.
+#![allow(clippy::expect_used, clippy::unwrap_used)]
+
 use rmeld::{Classification, Message};
 
 fn referenz(name: &str) -> Vec<u8> {
