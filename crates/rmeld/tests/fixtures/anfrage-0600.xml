@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<melderegisterauskunfteinfach.anforderung.0600
+    xmlns="http://www.osci.de/xmeld2611"
+    fassung="2026-01-31"
+    version="26.11"
+    produkt="rmeld 0.1.0"
+    produkthersteller="rmeld project">
+  <nachrichtenkopf>
+    <identifikation.nachricht>
+      <nachrichtennummer>
+        <code xmlns="">0600</code>
+      </nachrichtennummer>
+      <erstellungszeitpunkt>2026-11-16T12:00:00+01:00</erstellungszeitpunkt>
+      <tagesvorgangszaehler>1</tagesvorgangszaehler>
+    </identifikation.nachricht>
+    <absender>
+      <kunde.bezeichnung>
+        <NAMEJURISTISCHEPERSON>
+          <name>Musterermittlungen GbR</name>
+        </NAMEJURISTISCHEPERSON>
+      </kunde.bezeichnung>
+    </absender>
+    <empfaenger>
+      <behoerdenkennung>010530088888</behoerdenkennung>
+    </empfaenger>
+  </nachrichtenkopf>
+  <zeichennachricht>V-2026-4711</zeichennachricht>
+  <auskunft.anforderung>
+    <anfragedaten>
+      <zumZweckDerWerbungOderAdresshandel>false</zumZweckDerWerbungOderAdresshandel>
+    </anfragedaten>
+    <datenZurAnfrage>
+      <name>
+        <nachname>
+          <name xmlns="">Müller-Lüdenscheidt</name>
+        </nachname>
+        <vornamen>
+          <name xmlns="">Jürgen Örlich</name>
+        </vornamen>
+      </name>
+      <anschrift>
+        <postleitzahl xmlns="">24103</postleitzahl>
+        <strasse xmlns="">K.außenstraße</strasse>
+        <wohnort xmlns="">Kiel</wohnort>
+      </anschrift>
+      <geburtsdatum>
+        <teilbekanntesDatum xmlns="">
+          <jahrMonatTag>1968-03-17</jahrMonatTag>
+        </teilbekanntesDatum>
+      </geburtsdatum>
+    </datenZurAnfrage>
+    <technische.einzelidentifikation>
+      <ereigniszeitpunkt>2026-11-16T12:00:00+01:00</ereigniszeitpunkt>
+      <zeicheneinzelfall>V-2026-4711-1</zeicheneinzelfall>
+    </technische.einzelidentifikation>
+  </auskunft.anforderung>
+</melderegisterauskunfteinfach.anforderung.0600>

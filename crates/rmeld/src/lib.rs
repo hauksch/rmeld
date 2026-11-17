@@ -12,8 +12,20 @@
 //! as opaque bytes; rmeld owns exactly the xMeld XML — create 0600 from
 //! structured input, parse 0601 (and the technical-fault messages) into
 //! typed results, classify them, and XSD-validate both directions offline
-//! via xmllint and the vendored schemas.
+//! via xmllint and the embedded vendored schemas.
 
+pub mod classification;
+pub mod create;
 pub mod error;
+pub mod parse;
+pub mod validate;
+pub mod wire;
 
+pub use classification::{
+    Anschrift, Classification, Ergebnis, FaultSource, PersonName, Rejection, RejectionSource,
+    TechnicalFault,
+};
+pub use create::{Anfrage, AnfrageInput, AnschriftInput, EinzelanfrageInput, PartialDatum};
 pub use error::Error;
+pub use parse::{Antwort, AuskunftPosition, EinzelanfrageEcho, Message, PositionErgebnis, Rts};
+pub use validate::{SchemaKind, validate, validate_as};
