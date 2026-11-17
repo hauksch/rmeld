@@ -1,0 +1,6 @@
+# Toolchain pin — matches the sibling repos (rosci, oscirs) so builds are
+# reproducible across machines; any cargo outside resolves to exactly this
+# compiler instead of what rustup defaults to that day.
+[toolchain]
+channel = "1.98.1"
+components = ["rustfmt", "clippy"]

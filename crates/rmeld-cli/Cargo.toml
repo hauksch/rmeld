@@ -1,0 +1,22 @@
+[package]
+name = "rmeld-cli"
+description = "CLI for rmeld: create 0600 Anfragen, check 0601 Antworten"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "rmeld"
+path = "src/main.rs"
+
+[lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+
+[dependencies]
+clap = { workspace = true }
+rmeld = { path = "../rmeld" }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
