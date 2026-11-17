@@ -27,5 +27,7 @@ pub use classification::{
 };
 pub use create::{Anfrage, AnfrageInput, AnschriftInput, EinzelanfrageInput, PartialDatum};
 pub use error::Error;
-pub use parse::{Antwort, AuskunftPosition, EinzelanfrageEcho, Message, PositionErgebnis, Rts};
+pub use parse::{
+    AnfrageEcho, Antwort, AuskunftPosition, EinzelanfrageEcho, Message, PositionErgebnis, Rts,
+};
 pub use validate::{SchemaKind, validate, validate_as};

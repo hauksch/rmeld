@@ -6,6 +6,7 @@
 //! the message kinds from the global element declarations in
 //! `schema/xmeld/xmeld-nachrichten-melderegisterauskunft.xsd` and
 //! `…-administration.xsd`. See docs/STANDARD-NOTES.md for the mapping.
+use serde::{Deserialize, Serialize};
 
 /// The fachlich verdict for one Anfrage, one Auskunft position or a whole
 /// message. This is the taxonomy the Fachanwendung switches on.
@@ -31,7 +32,7 @@ pub enum Classification {
 }
 
 /// Person data from a fulfilled answer (ergebnis element).
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Ergebnis {
     /// Raw ergebnisstatus code as sent („01“ for fulfilled answers; kept raw
     /// so unknown future codes still round-trip).
@@ -45,7 +46,7 @@ pub struct Ergebnis {
 }
 
 /// Name block of a fulfilled answer (type.Melderegisterauskunft.Name).
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct PersonName {
     /// familienname.unstrukturiert/nachname.
     pub familienname: Option<String>,
@@ -60,7 +61,7 @@ pub struct PersonName {
 /// Registered address of a fulfilled answer (Inland form of
 /// type.AnschriftMelderecht). Only the fields a Fachanwendung acts on are
 /// surfaced; the XSD gate keeps the full wire fidelity.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Anschrift {
     /// Amtlicher Gemeindeschlüssel (gemeindeschluessel/code).
     pub ags: Option<String>,
@@ -75,7 +76,7 @@ pub struct Anschrift {
 }
 
 /// Source of a fachlich rejection.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum RejectionSource {
     /// rueckweisung element inside one Auskunft position.
     NichterstellungEinzelanfrage,
@@ -84,7 +85,7 @@ pub enum RejectionSource {
 }
 
 /// A fachlich rejection, with the raw code for round-tripping.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Rejection {
     /// Where the rejection was expressed (position-level or message-level).
     pub quelle: RejectionSource,
@@ -93,7 +94,7 @@ pub struct Rejection {
 }
 
 /// Source of a technical fault.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FaultSource {
     /// Message-level antwortstatus (codes 01, 05).
     Antwortstatus,
@@ -102,7 +103,7 @@ pub enum FaultSource {
 }
 
 /// A technical fault, with the raw RTS or Antwortstatus code.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TechnicalFault {
     /// Where the fault was expressed (Antwortstatus or RTS message).
     pub quelle: FaultSource,
