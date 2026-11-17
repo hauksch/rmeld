@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Information zu dieser Referenznachricht
+Testfall  : FachspezifischEMRA002
+Nachricht : FachspezifischEMRA002b-0601.xml
+Autor  : S Stadt
+Leser : HansMueller1234
+Erstellt  : 2026-08-21T13:11:04.547+02:00
+Bestandteil der Testsuite des Standards XMeld-->
+<xmeld:melderegisterauskunfteinfach.antwort.0601 xmlns:xmeld="http://www.osci.de/xmeld2705"
+                                                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                                 xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                                 xmlns:xima="http://www.osci.de/xinneres/meldeanschrift/5"
+                                                 xmlns:xian="http://www.osci.de/xinneres/allgemeinername/4"
+                                                 xmlns:xida="http://www.osci.de/xinneres/datum/2"
+                                                 xmlns:xiaa="http://www.osci.de/xinneres/auslandsanschrift/5"
+                                                 xsi:schemaLocation="http://www.osci.de/xmeld2705 http://www.osci.de/xmeld2705/xmeld-nachrichten-melderegisterauskunft.xsd"
+                                                 test="Referenznachricht für XMeld"
+                                                 version="27.05"
+                                                 produkt="OSCI-XMeld Testsuite"
+                                                 produkthersteller="Koordinierungsstelle für IT-Standards (KoSIT)"
+                                                 produktversion="Stand 27.05"
+                                                 fassung="2026-07-31">
+    <xmeld:nachrichtenkopf>
+        <xmeld:identifikation.nachricht>
+            <xmeld:nachrichtennummer>
+                <code>0601</code>
+            </xmeld:nachrichtennummer>
+            <xmeld:erstellungszeitpunkt>2026-08-21T13:14:25.547+02:00</xmeld:erstellungszeitpunkt>
+            <xmeld:tagesvorgangszaehler>202</xmeld:tagesvorgangszaehler>
+        </xmeld:identifikation.nachricht>
+        <xmeld:anwenderkennung>XMeld Arbeitsgruppe Testspezifikation</xmeld:anwenderkennung>
+        <xmeld:absender>
+            <xmeld:behoerdenkennung>ags:99000060</xmeld:behoerdenkennung>
+            <xmeld:ORGANISATIONSEINHEIT>
+                <xmeld:bezeichnung>S Stadt, Bürgerbüro</xmeld:bezeichnung>
+                <xmeld:hierarchieebene>1</xmeld:hierarchieebene>
+            </xmeld:ORGANISATIONSEINHEIT>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>01</code>
+					          </kanal>
+                <kennung>[E-Mail-Adresse einer Test-Partei]</kennung>
+                <zusatz>Unter kennung kann für praktische Zwecke beim Test eine Mail-Adresse eingetragen werden. Hier der Name des Ansprechpartners.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>02</code>
+					          </kanal>
+                <kennung>[Behördentelefon, Sammelanschluss]</kennung>
+                <zusatz>Hier kann für praktische Zwecke beim Test eine Telefonnummer eingetragen werden.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>02</code>
+					          </kanal>
+                <kennung>[Behördentelefon, Durchwahl]</kennung>
+                <zusatz>Unter kennung kann für praktische Zwecke beim Test die Telefonnummer eines Ansprechpartners für den Test eingetragen werden.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>04</code>
+					          </kanal>
+                <kennung>[Behördenfax]</kennung>
+                <zusatz>Unter kennung kann für praktische Zwecke beim Test eine Faxnummer eingetragen werden.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:ANSCHRIFT>
+                <hausnummer>153</hausnummer>
+                <postleitzahl>60000</postleitzahl>
+                <strasse>Rathausstraße</strasse>
+                <wohnort>S Stadt</wohnort>
+            </xmeld:ANSCHRIFT>
+        </xmeld:absender>
+        <xmeld:empfaenger>
+            <xmeld:kunde.bezeichnung>
+					          <xmeld:NAMENATUERLICHEPERSON>
+						              <xmeld:familienname.unstrukturiert>
+							                 <xmeld:nachname>
+								                    <name>Müller</name>
+							                 </xmeld:nachname>							
+						              </xmeld:familienname.unstrukturiert>
+						              <xmeld:vornamen>
+							                 <xmeld:vornamen>
+								                    <name>Hans</name>
+							                 </xmeld:vornamen>							
+						              </xmeld:vornamen>
+					          </xmeld:NAMENATUERLICHEPERSON>
+				        </xmeld:kunde.bezeichnung>
+            <xmeld:kundennummer>HansMueller1234</xmeld:kundennummer>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>01</code>
+					          </kanal>
+                <kennung>[E-Mail-Adresse einer Test-Partei]</kennung>
+                <zusatz>Unter kennung kann für praktische Zwecke beim Test eine Mail-Adresse eingetragen werden. Hier der Name des Ansprechpartners.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>02</code>
+					          </kanal>
+                <kennung>[Telefon, Sammelanschluss]</kennung>
+                <zusatz>Hier kann für praktische Zwecke beim Test eine Telefonnummer eingetragen werden.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>02</code>
+					          </kanal>
+                <kennung>[Behördentelefon, Durchwahl]</kennung>
+                <zusatz>Unter kennung kann für praktische Zwecke beim Test die Telefonnummer eines Ansprechpartners für den Test eingetragen werden. Hier der Name des Ansprechpartners.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>04</code>
+					          </kanal>
+                <kennung>[Fax]</kennung>
+                <zusatz>Unter kennung kann für praktische Zwecke beim Test eine Faxnummer eingetragen werden.</zusatz>
+            </xmeld:erreichbarkeit>
+        </xmeld:empfaenger>
+    </xmeld:nachrichtenkopf>
+    <xmeld:antwortstatus>
+        <code>00</code>
+    </xmeld:antwortstatus>
+    <xmeld:auskunft.antwort>
+        <xmeld:auskunft.angefordert>
+            <xmeld:anfragedaten>
+                <xmeld:zumZweckDerWerbungOderAdresshandel>false</xmeld:zumZweckDerWerbungOderAdresshandel>
+            </xmeld:anfragedaten>
+            <xmeld:datenZurAnfrage>
+                <xmeld:name>
+                    <xmeld:nachname>
+                        <name>Valdez</name>
+                    </xmeld:nachname>
+                    <xmeld:vornamen>
+                        <name>Hugo</name>
+                    </xmeld:vornamen>
+                </xmeld:name>
+                <xmeld:anschrift>
+                    <hausnummer>2</hausnummer>
+                    <postleitzahl>60000</postleitzahl>
+                    <strasse>Finkenstraße</strasse>
+                    <wohnort>S Stadt</wohnort>
+                </xmeld:anschrift>
+                <xmeld:einzugsdatum>2019-11-01</xmeld:einzugsdatum>
+            </xmeld:datenZurAnfrage>
+            <xmeld:technische.einzelidentifikation>
+                <xmeld:ereigniszeitpunkt>2026-08-21T13:14:24.547+02:00</xmeld:ereigniszeitpunkt>
+                <xmeld:zeicheneinzelfall>FachspezifischEMRA002a-0600-1</xmeld:zeicheneinzelfall>
+            </xmeld:technische.einzelidentifikation>
+        </xmeld:auskunft.angefordert>
+        <xmeld:ergebnis>
+            <xmeld:ergebnis>
+                <xmeld:ergebnisstatus>
+                    <code>01</code>
+                </xmeld:ergebnisstatus>
+                <xmeld:zusatzinformation>
+                    <code>04</code>
+                </xmeld:zusatzinformation>
+                <xmeld:namen>
+                    <xmeld:familienname.unstrukturiert>
+                        <xmeld:nachname>
+                            <name>Valdez</name>
+                        </xmeld:nachname>
+                    </xmeld:familienname.unstrukturiert>
+                    <xmeld:vornamen>
+                        <xmeld:vornamen>
+                            <name>Hugo</name>
+                        </xmeld:vornamen>
+                    </xmeld:vornamen>
+                </xmeld:namen>
+                <xmeld:anschrift.aktuell>
+                    <xmeld:anschrift.inland>
+                        <gemeindeschluessel listVersionID="2026-08-31">
+                            <code>99000060</code>
+                        </gemeindeschluessel>
+                        <hausnummer>2</hausnummer>
+                        <postleitzahl>60000</postleitzahl>
+                        <strasse>Finkenstraße</strasse>
+                        <wohnort>S Stadt</wohnort>
+                    </xmeld:anschrift.inland>
+                </xmeld:anschrift.aktuell>
+                <xmeld:anschrift.aktuell>
+                    <xmeld:anschrift.inland>
+                        <gemeindeschluessel listVersionID="2026-08-31">
+                            <code>99000110</code>
+                        </gemeindeschluessel>
+                        <hausnummer>66</hausnummer>
+                        <postleitzahl>10000</postleitzahl>
+                        <strasse>Palmengarten</strasse>
+                        <wohnort>Testgemeinde A</wohnort>
+                    </xmeld:anschrift.inland>
+                </xmeld:anschrift.aktuell>
+            </xmeld:ergebnis>
+        </xmeld:ergebnis>
+    </xmeld:auskunft.antwort>
+</xmeld:melderegisterauskunfteinfach.antwort.0601>

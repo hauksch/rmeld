@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Information zu dieser Referenznachricht
+Testfall  : FachspezifischEMRA004
+Nachricht : FachspezifischEMRA004a-0600.xml
+Autor  : HansMueller1234
+Leser : Testgemeinde A
+Erstellt  : 2026-08-21T13:11:04.547+02:00
+Bestandteil der Testsuite des Standards XMeld-->
+<xmeld:melderegisterauskunfteinfach.anforderung.0600 xmlns:xmeld="http://www.osci.de/xmeld2705"
+                                                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                                     xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                                     xmlns:xima="http://www.osci.de/xinneres/meldeanschrift/5"
+                                                     xmlns:xian="http://www.osci.de/xinneres/allgemeinername/4"
+                                                     xmlns:xida="http://www.osci.de/xinneres/datum/2"
+                                                     xmlns:xiaa="http://www.osci.de/xinneres/auslandsanschrift/5"
+                                                     xsi:schemaLocation="http://www.osci.de/xmeld2705 http://www.osci.de/xmeld2705/xmeld-nachrichten-melderegisterauskunft.xsd"
+                                                     test="Referenznachricht für XMeld"
+                                                     version="27.05"
+                                                     produkt="OSCI-XMeld Testsuite"
+                                                     produkthersteller="Koordinierungsstelle für IT-Standards (KoSIT)"
+                                                     produktversion="Stand 27.05"
+                                                     fassung="2026-07-31">
+    <xmeld:nachrichtenkopf>
+        <xmeld:identifikation.nachricht>
+            <xmeld:nachrichtennummer>
+                <code>0600</code>
+            </xmeld:nachrichtennummer>
+            <xmeld:erstellungszeitpunkt>2026-08-21T13:14:28.547+02:00</xmeld:erstellungszeitpunkt>
+            <xmeld:tagesvorgangszaehler>205</xmeld:tagesvorgangszaehler>
+        </xmeld:identifikation.nachricht>
+        <xmeld:anwenderkennung>XMeld Arbeitsgruppe Testspezifikation</xmeld:anwenderkennung>
+        <xmeld:absender>
+            <xmeld:kunde.bezeichnung>
+					          <xmeld:NAMENATUERLICHEPERSON>
+						              <xmeld:familienname.unstrukturiert>
+							                 <xmeld:nachname>
+								                    <name>Müller</name>
+							                 </xmeld:nachname>							
+						              </xmeld:familienname.unstrukturiert>
+						              <xmeld:vornamen>
+							                 <xmeld:vornamen>
+								                    <name>Hans</name>
+							                 </xmeld:vornamen>							
+						              </xmeld:vornamen>
+					          </xmeld:NAMENATUERLICHEPERSON>
+				        </xmeld:kunde.bezeichnung>
+            <xmeld:kundennummer>HansMueller1234</xmeld:kundennummer>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>01</code>
+					          </kanal>
+                <kennung>[E-Mail-Adresse einer Test-Partei]</kennung>
+                <zusatz>Unter kennung kann für praktische Zwecke beim Test eine Mail-Adresse eingetragen werden. Hier der Name des Ansprechpartners.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>02</code>
+					          </kanal>
+                <kennung>[Telefon, Sammelanschluss]</kennung>
+                <zusatz>Hier kann für praktische Zwecke beim Test eine Telefonnummer eingetragen werden.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>02</code>
+					          </kanal>
+                <kennung>[Behördentelefon, Durchwahl]</kennung>
+                <zusatz>Unter kennung kann für praktische Zwecke beim Test die Telefonnummer eines Ansprechpartners für den Test eingetragen werden. Hier der Name des Ansprechpartners.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>04</code>
+					          </kanal>
+                <kennung>[Fax]</kennung>
+                <zusatz>Unter kennung kann für praktische Zwecke beim Test eine Faxnummer eingetragen werden.</zusatz>
+            </xmeld:erreichbarkeit>
+        </xmeld:absender>
+        <xmeld:empfaenger>
+            <xmeld:behoerdenkennung>ags:99000110</xmeld:behoerdenkennung>
+            <xmeld:ORGANISATIONSEINHEIT>
+                <xmeld:bezeichnung>Testgemeinde A, Bürgerbüro</xmeld:bezeichnung>
+                <xmeld:hierarchieebene>1</xmeld:hierarchieebene>
+            </xmeld:ORGANISATIONSEINHEIT>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>01</code>
+					          </kanal>
+                <kennung>[E-Mail-Adresse einer Test-Partei]</kennung>
+                <zusatz>Unter kennung kann für praktische Zwecke beim Test eine Mail-Adresse eingetragen werden. Hier der Name des Ansprechpartners.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>02</code>
+					          </kanal>
+                <kennung>[Behördentelefon, Sammelanschluss]</kennung>
+                <zusatz>Hier kann für praktische Zwecke beim Test eine Telefonnummer eingetragen werden.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>02</code>
+					          </kanal>
+                <kennung>[Behördentelefon, Durchwahl]</kennung>
+                <zusatz>Unter kennung kann für praktische Zwecke beim Test die Telefonnummer eines Ansprechpartners für den Test eingetragen werden. Hier der Name des Ansprechpartners.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:erreichbarkeit>
+                <kanal listVersionID="4.1">
+						              <code>04</code>
+					          </kanal>
+                <kennung>[Behördenfax]</kennung>
+                <zusatz>Unter kennung kann für praktische Zwecke beim Test eine Faxnummer eingetragen werden.</zusatz>
+            </xmeld:erreichbarkeit>
+            <xmeld:ANSCHRIFT>
+                <hausnummer>12</hausnummer>
+                <postleitzahl>10000</postleitzahl>
+                <strasse>Am Stadttor</strasse>
+                <wohnort>Testgemeinde A</wohnort>
+            </xmeld:ANSCHRIFT>
+        </xmeld:empfaenger>
+    </xmeld:nachrichtenkopf>
+    <xmeld:anwenderkennung>1234</xmeld:anwenderkennung>
+    <xmeld:antragsteller>
+        <xmeld:zeile>
+            <xmeld:position>1</xmeld:position>
+            <xmeld:inhalt>Hans Müller</xmeld:inhalt>
+        </xmeld:zeile>
+        <xmeld:zeile>
+            <xmeld:position>2</xmeld:position>
+            <xmeld:inhalt>Hauptstraße 18</xmeld:inhalt>
+        </xmeld:zeile>
+        <xmeld:zeile>
+            <xmeld:position>3</xmeld:position>
+            <xmeld:inhalt>12345 Todstedt</xmeld:inhalt>
+        </xmeld:zeile>
+    </xmeld:antragsteller>
+    <xmeld:auskunft.anforderung>
+        <xmeld:anfragedaten>
+            <xmeld:zumZweckDerWerbungOderAdresshandel>false</xmeld:zumZweckDerWerbungOderAdresshandel>
+        </xmeld:anfragedaten>
+        <xmeld:datenZurAnfrage>
+            <xmeld:name>
+                <xmeld:nachname>
+                    <name>Süß</name>
+                </xmeld:nachname>
+                <xmeld:vornamen>
+                    <name>Maurice Alessio</name>
+                </xmeld:vornamen>
+            </xmeld:name>
+            <xmeld:geburtsdatum>
+                <teilbekanntesDatum>
+                    <jahrMonatTag>1976-10-25</jahrMonatTag>
+                </teilbekanntesDatum>
+            </xmeld:geburtsdatum>
+            <xmeld:geburtsortUndStaat>
+                <xmeld:geburtsort>Rom</xmeld:geburtsort>
+            </xmeld:geburtsortUndStaat>
+        </xmeld:datenZurAnfrage>
+        <xmeld:technische.einzelidentifikation>
+            <xmeld:ereigniszeitpunkt>2026-08-21T13:14:28.547+02:00</xmeld:ereigniszeitpunkt>
+            <xmeld:zeicheneinzelfall>FachspezifischEMRA004a-0600-1</xmeld:zeicheneinzelfall>
+        </xmeld:technische.einzelidentifikation>
+    </xmeld:auskunft.anforderung>
+</xmeld:melderegisterauskunfteinfach.anforderung.0600>
