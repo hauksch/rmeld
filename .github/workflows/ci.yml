@@ -1,0 +1,40 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # SHA pinning drops the ref-name default, so the toolchain input is
+      # mandatory — without it the action fails with "'toolchain' is a
+      # required input".
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+      - name: Install xmllint
+        # xmllint is the XSD validation engine for the schema gate; the
+        # validation path fails loudly when it is missing, so the install
+        # is load-bearing, not convenience.
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+      - name: cargo deny (licenses, advisories, sources)
+        uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39
+        with:
+          tool: cargo-deny
+      - run: cargo deny --config deny.toml check --hide-inclusion-graph licenses advisories sources

@@ -1,0 +1,20 @@
+[package]
+name = "rmeld"
+description = "Fachlich layer for xMeld Melderegisterauskunft (Nachricht 0600/0601): create, parse, classify, XSD-validate"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints.rust]
+missing_docs = "deny"
+
+[lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+
+[dependencies]
+quick-xml = { workspace = true }
+serde = { workspace = true }
+tempfile = { workspace = true }
+thiserror = { workspace = true }
