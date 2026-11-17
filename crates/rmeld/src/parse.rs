@@ -24,7 +24,7 @@ use crate::wire::KNOWN_NAMESPACES;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Message {
     /// Nachricht 0600, parsed back for round-trip verification.
-    Anfrage0600(Anfrage),
+    Anfrage0600(AnfrageEcho),
     /// Nachricht 0601 — the fachlich answer.
     Antwort0601(Antwort),
     /// administration.returntosender.0900/0910 — technical rejection.
@@ -48,7 +48,7 @@ impl Message {
                     assert_known_namespace(ns, &root)?;
                     match root.as_str() {
                         "melderegisterauskunfteinfach.anforderung.0600" => {
-                            return Anfrage::from_reader(&mut reader, root)
+                            return AnfrageEcho::from_reader(&mut reader, root)
                                 .map(Message::Anfrage0600);
                         }
                         "melderegisterauskunfteinfach.antwort.0601" => {
@@ -113,8 +113,8 @@ fn assert_known_namespace(ns: &str, root: &str) -> Result<(), Error> {
 
 /// A parsed 0600 Anfrage (echo of the create surface; round-trip checks
 /// cover it — correlations and Suchprofil names).
-#[derive(Debug, Clone, PartialEq)]
-pub struct Anfrage {
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+pub struct AnfrageEcho {
     /// zeichennachricht — the caller's message-level correlation ID.
     pub zeichennachricht: Option<String>,
     /// One echo per auskunft.anforderung, in order.
@@ -122,7 +122,7 @@ pub struct Anfrage {
 }
 
 /// Echo of one Einzelanfrage inside a 0600.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct EinzelanfrageEcho {
     /// zeicheneinzelfall of the Einzelanfrage.
     pub zeicheneinzelfall: Option<String>,
@@ -495,9 +495,9 @@ fn allgemeiner_name_text(pr: &mut PathReader<'_, '_>, is_empty: bool) -> Result<
 
 // ─── 0600 ───────────────────────────────────────────────────────────────
 
-impl Anfrage {
-    fn from_reader(reader: &mut NsReader<&[u8]>, root: String) -> Result<Anfrage, Error> {
-        let mut msg = Anfrage {
+impl AnfrageEcho {
+    fn from_reader(reader: &mut NsReader<&[u8]>, root: String) -> Result<AnfrageEcho, Error> {
+        let mut msg = AnfrageEcho {
             zeichennachricht: None,
             einzelfaelle: Vec::new(),
         };

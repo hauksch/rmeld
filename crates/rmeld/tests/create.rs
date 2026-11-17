@@ -147,4 +147,3 @@ fn json_input_deserializes_into_the_contract() {
     );
     assert!(xml.contains("version=\"26.11\""), "default version applies");
 }
-
