@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<administration.returntosender.0900
+    xmlns="http://www.osci.de/xmeld2611"
+    fassung="2026-01-31"
+    version="26.11"
+    produkt="EWO-Beispielverfahren"
+    produkthersteller="Musterland IT">
+  <nachrichtenkopf>
+    <identifikation.nachricht>
+      <nachrichtennummer>
+        <code xmlns="">0900</code>
+      </nachrichtennummer>
+      <erstellungszeitpunkt>2026-11-16T14:45:00+01:00</erstellungszeitpunkt>
+      <tagesvorgangszaehler>43</tagesvorgangszaehler>
+    </identifikation.nachricht>
+    <absender>
+      <behoerdenkennung>010530088888</behoerdenkennung>
+      <ORGANISATIONSEINHEIT>
+        <bezeichnung>Meldeamt</bezeichnung>
+        <hierarchieebene>2</hierarchieebene>
+      </ORGANISATIONSEINHEIT>
+      <erreichbarkeit>
+        <kanal xmlns="" listVersionID="2024-04-01">
+          <code>001</code>
+        </kanal>
+        <kennung xmlns="">+49 431 000 000</kennung>
+      </erreichbarkeit>
+      <ANSCHRIFT>
+        <postleitzahl xmlns="">24103</postleitzahl>
+        <strasse xmlns="">Fleethstraße</strasse>
+        <wohnort xmlns="">Kiel</wohnort>
+      </ANSCHRIFT>
+    </absender>
+    <empfaenger>
+      <behoerdenkennung>010530088888</behoerdenkennung>
+    </empfaenger>
+  </nachrichtenkopf>
+  <rts.container>
+    <begruendung>
+      <grund>
+        <code xmlns="">T099</code>
+      </grund>
+      <ergaenzende.hinweise>Synthetische Fixture - keine echte Nachricht zurueckgewiesen.</ergaenzende.hinweise>
+    </begruendung>
+    <nachricht>PD94bWwgdmVyc2lvbj0iMS4wIj8+PHRlc3QvPg==</nachricht>
+  </rts.container>
+</administration.returntosender.0900>

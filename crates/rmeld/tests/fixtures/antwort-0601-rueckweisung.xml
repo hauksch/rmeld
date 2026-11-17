@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<melderegisterauskunfteinfach.antwort.0601
+    xmlns="http://www.osci.de/xmeld2611"
+    fassung="2026-01-31"
+    version="26.11"
+    produkt="EWO-Beispielverfahren"
+    produkthersteller="Musterland IT">
+  <nachrichtenkopf>
+    <identifikation.nachricht>
+      <nachrichtennummer>
+        <code xmlns="">0601</code>
+      </nachrichtennummer>
+      <erstellungszeitpunkt>2026-11-16T14:30:00+01:00</erstellungszeitpunkt>
+      <tagesvorgangszaehler>42</tagesvorgangszaehler>
+    </identifikation.nachricht>
+    <absender>
+      <behoerdenkennung>010530088888</behoerdenkennung>
+      <ORGANISATIONSEINHEIT>
+        <bezeichnung>Meldeamt</bezeichnung>
+        <hierarchieebene>2</hierarchieebene>
+      </ORGANISATIONSEINHEIT>
+      <erreichbarkeit>
+        <kanal xmlns="" listVersionID="2024-04-01">
+          <code>001</code>
+        </kanal>
+        <kennung xmlns="">+49 431 000 000</kennung>
+      </erreichbarkeit>
+      <ANSCHRIFT>
+        <postleitzahl xmlns="">24103</postleitzahl>
+        <strasse xmlns="">Fleethstraße</strasse>
+        <wohnort xmlns="">Kiel</wohnort>
+      </ANSCHRIFT>
+    </absender>
+    <empfaenger>
+      <kunde.bezeichnung>
+        <NAMEJURISTISCHEPERSON>
+          <name>Musterermittlungen GbR</name>
+        </NAMEJURISTISCHEPERSON>
+      </kunde.bezeichnung>
+    </empfaenger>
+  </nachrichtenkopf>
+  <antwortstatus>
+    <code xmlns="">00</code>
+  </antwortstatus>
+  <zeichennachricht>V-2026-4711</zeichennachricht>
+  <auskunft.antwort>
+    <auskunft.angefordert>
+      <anfragedaten>
+        <zumZweckDerWerbungOderAdresshandel>false</zumZweckDerWerbungOderAdresshandel>
+      </anfragedaten>
+      <datenZurAnfrage>
+        <name>
+          <nachname>
+            <name xmlns="">Müller-Lüdenscheidt</name>
+          </nachname>
+          <vornamen>
+            <name xmlns="">Jürgen Örlich</name>
+          </vornamen>
+        </name>
+        <anschrift>
+          <postleitzahl xmlns="">24103</postleitzahl>
+          <strasse xmlns="">K.außenstraße</strasse>
+          <wohnort xmlns="">Kiel</wohnort>
+        </anschrift>
+        <geburtsdatum>
+          <teilbekanntesDatum xmlns="">
+            <jahrMonatTag>1968-03-17</jahrMonatTag>
+          </teilbekanntesDatum>
+        </geburtsdatum>
+      </datenZurAnfrage>
+      <technische.einzelidentifikation>
+        <ereigniszeitpunkt>2026-11-16T12:00:00+01:00</ereigniszeitpunkt>
+        <zeicheneinzelfall>V-2026-4711-1</zeicheneinzelfall>
+      </technische.einzelidentifikation>
+    </auskunft.angefordert>
+    <ergebnis>
+      <rueckweisung>
+        <code xmlns="">08</code>
+      </rueckweisung>
+    </ergebnis>
+  </auskunft.antwort>
+</melderegisterauskunfteinfach.antwort.0601>
