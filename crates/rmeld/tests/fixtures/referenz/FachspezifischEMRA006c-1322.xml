@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Information zu dieser Referenznachricht
+Testfall  : FachspezifischEMRA006
+Nachricht : FachspezifischEMRA006c-1322.xml
+Autor  : S Stadt
+Leser : Testgemeinde B
+Erstellt  : 2026-08-21T13:11:04.547+02:00
+Bestandteil der Testsuite des Standards XMeld-->
+<xmeld:datenabrufe.aussteuerung.suchanfrage.1322 xmlns:xmeld="http://www.osci.de/xmeld2705"
+                                                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                                 xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                                                 xmlns:xima="http://www.osci.de/xinneres/meldeanschrift/5"
+                                                 xmlns:xig="http://www.osci.de/xinneres/geschlecht/1"
+                                                 xmlns:xian="http://www.osci.de/xinneres/allgemeinername/4"
+                                                 xmlns:xida="http://www.osci.de/xinneres/datum/2"
+                                                 xmlns:xiaa="http://www.osci.de/xinneres/auslandsanschrift/5"
+                                                 xmlns:xibehoerde="http://www.osci.de/xinneres/behoerde/7"
+                                                 xmlns:xicgvz="http://www.osci.de/xinneres/codes/gemeindeverzeichnis/3"
+                                                 xsi:schemaLocation="http://www.osci.de/xmeld2705 http://www.osci.de/xmeld2705/xmeld-nachrichten-datenabrufe.xsd"
+                                                 test="Referenznachricht für XMeld"
+                                                 version="27.05"
+                                                 produkt="OSCI-XMeld Testsuite"
+                                                 produkthersteller="Koordinierungsstelle für IT-Standards (KoSIT)"
+                                                 produktversion="Stand 27.05"
+                                                 standard="XMeld">
+    <nachrichtenkopf.g2g>
+        <identifikation.nachricht>
+            <nachrichtenUUID>d5788bd3-6fbb-59cf-9a1f-e37a47814b4d</nachrichtenUUID>
+            <nachrichtentyp>
+                <code>1322</code>
+            </nachrichtentyp>
+            <erstellungszeitpunkt>2026-08-21T13:14:34.547+02:00</erstellungszeitpunkt>
+        </identifikation.nachricht>
+        <leser>
+            <verzeichnisdienst listVersionID="4">
+					          <code>DVDV</code>
+				        </verzeichnisdienst>
+            <kennung>ags:99000030</kennung>
+            <name>Testgemeinde B, Bürgerbüro</name>
+            <erreichbarkeit>					
+					          <kanal listVersionID="4.1">
+						              <code>01</code>
+					          </kanal>
+					          <kennung>[E-Mail-Adresse einer Test-Partei]</kennung>
+					          <zusatz>Unter kennung kann für praktische Zwecke beim Test eine Mail-Adresse eingetragen werden. Hier der Name des Ansprechpartners.</zusatz>
+				        </erreichbarkeit>
+            <erreichbarkeit>					
+					          <kanal listVersionID="4.1">
+						              <code>02</code>
+					          </kanal>
+					          <kennung>[Behördentelefon, Sammelanschluss]</kennung>
+					          <zusatz>Hier kann für praktische Zwecke beim Test eine Telefonnummer eingetragen werden.</zusatz>
+				        </erreichbarkeit>
+            <erreichbarkeit>					
+					          <kanal listVersionID="4.1">
+						              <code>02</code>
+					          </kanal>
+					          <kennung>[Behördentelefon, Durchwahl]</kennung>
+					          <zusatz>Unter kennung kann für praktische Zwecke beim Test die Telefonnummer eines Ansprechpartners für den Test eingetragen werden. Hier der Name des Ansprechpartners.</zusatz>
+				        </erreichbarkeit>
+            <erreichbarkeit>					
+					          <kanal listVersionID="4.1">
+						              <code>04</code>
+					          </kanal>
+					          <kennung>[Behördenfax]</kennung>
+					          <zusatz>Unter kennung kann für praktische Zwecke beim Test eine Faxnummer eingetragen werden.</zusatz>
+				        </erreichbarkeit>
+        </leser>
+        <autor>
+            <verzeichnisdienst listVersionID="4">
+					          <code>DVDV</code>
+				        </verzeichnisdienst>
+            <kennung>ags:99000060</kennung>
+            <name>S Stadt, Bürgerbüro</name>
+            <erreichbarkeit>					
+					          <kanal listVersionID="4.1">
+						              <code>01</code>
+					          </kanal>
+					          <kennung>[E-Mail-Adresse einer Test-Partei]</kennung>
+					          <zusatz>Unter kennung kann für praktische Zwecke beim Test eine Mail-Adresse eingetragen werden. Hier der Name des Ansprechpartners.</zusatz>
+				        </erreichbarkeit>
+            <erreichbarkeit>					
+					          <kanal listVersionID="4.1">
+						              <code>02</code>
+					          </kanal>
+					          <kennung>[Behördentelefon, Sammelanschluss]</kennung>
+					          <zusatz>Hier kann für praktische Zwecke beim Test eine Telefonnummer eingetragen werden.</zusatz>
+				        </erreichbarkeit>
+            <erreichbarkeit>					
+					          <kanal listVersionID="4.1">
+						              <code>02</code>
+					          </kanal>
+					          <kennung>[Behördentelefon, Durchwahl]</kennung>
+					          <zusatz>Unter kennung kann für praktische Zwecke beim Test die Telefonnummer eines Ansprechpartners für den Test eingetragen werden.</zusatz>
+				        </erreichbarkeit>
+            <erreichbarkeit>					
+					          <kanal listVersionID="4.1">
+						              <code>04</code>
+					          </kanal>
+					          <kennung>[Behördenfax]</kennung>
+					          <zusatz>Unter kennung kann für praktische Zwecke beim Test eine Faxnummer eingetragen werden.</zusatz>
+				        </erreichbarkeit>
+        </autor>
+    </nachrichtenkopf.g2g>
+    <anschrift.leser>
+        <gebaeude>					
+						            <hausnummer>9</hausnummer>
+						            <postleitzahl>30000</postleitzahl>
+						            <strasse>Hauptstraße</strasse>
+						            <wohnort>Testgemeinde B</wohnort>
+						            <zusatzangaben>Behördenzentrum</zusatzangaben>
+					          </gebaeude>
+    </anschrift.leser>
+    <anschrift.autor>
+        <gebaeude>						
+						            <hausnummer>153</hausnummer>
+						            <postleitzahl>60000</postleitzahl>
+						            <strasse>Rathausstraße</strasse>
+						            <wohnort>S Stadt</wohnort>
+					          </gebaeude>
+    </anschrift.autor>
+    <xmeld:gefundenePerson>
+        <xmeld:personendaten>
+            <xmeld:name>
+                <xmeld:familienname.unstrukturiert>
+                    <xmeld:nachname>
+                        <name>Georgius</name>
+                    </xmeld:nachname>
+                </xmeld:familienname.unstrukturiert>
+                <xmeld:geburtsname.unstrukturiert>
+                    <name>Müller</name>
+                </xmeld:geburtsname.unstrukturiert>
+                <xmeld:vornamen>
+                    <xmeld:vornamen>
+                        <name>Wilma Elsa Charlotte</name>
+                    </xmeld:vornamen>
+                </xmeld:vornamen>
+                <xmeld:gebraeuchlicherVorname>
+                    <name>Wilma</name>
+                </xmeld:gebraeuchlicherVorname>
+            </xmeld:name>
+            <xmeld:geburtsdatum>
+                <xmeld:geburtsdatum>
+                    <teilbekanntesDatum>
+                        <jahrMonatTag>1981-01-20</jahrMonatTag>
+                    </teilbekanntesDatum>
+                </xmeld:geburtsdatum>
+            </xmeld:geburtsdatum>
+            <xmeld:anschrift>
+                <gemeindeschluessel listVersionID="2026-08-31">
+                    <code>99000060</code>
+                </gemeindeschluessel>
+                <hausnummer>4</hausnummer>
+                <postleitzahl>60000</postleitzahl>
+                <strasse>Rotkelchenweg</strasse>
+                <wohnort>S Stadt</wohnort>
+                <zusatzangaben>1. Aufg.</zusatzangaben>
+            </xmeld:anschrift>
+        </xmeld:personendaten>
+    </xmeld:gefundenePerson>
+    <xmeld:nachricht>PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjx0ZXN0Pg0KICAgICAgICAgICAgPGluaGFsdD5EaWVzZSBEYXRlaSBpc3QgZWluIFBsYXR6aGFsdGVyIGbDvHIgZGllIE5hY2hyaWNodCwgZGllIHVyc3Byw7xuZ2xpY2ggdmVyc2VuZGV0IHd1cmRlIHVuZCBhdWYgZGllIGdlYW50d29ydGV0IHdpcmQgKFVyc3BydW5nc25hY2hyaWNodCkuPC9pbmhhbHQ+DQo8L3Rlc3Q+DQo=</xmeld:nachricht>
+    <xmeld:nachrichtenart>
+        <code>0600</code>
+    </xmeld:nachrichtenart>
+</xmeld:datenabrufe.aussteuerung.suchanfrage.1322>

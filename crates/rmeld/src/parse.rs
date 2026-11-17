@@ -117,6 +117,9 @@ fn assert_known_namespace(ns: &str, root: &str) -> Result<(), Error> {
 pub struct AnfrageEcho {
     /// zeichennachricht — the caller's message-level correlation ID.
     pub zeichennachricht: Option<String>,
+    /// anwenderkennung — logger identity of the requesting user (header
+    /// level; the official reference messages carry it).
+    pub anwenderkennung: Option<String>,
     /// One echo per auskunft.anforderung, in order.
     pub einzelfaelle: Vec<EinzelanfrageEcho>,
 }
@@ -499,6 +502,7 @@ impl AnfrageEcho {
     fn from_reader(reader: &mut NsReader<&[u8]>, root: String) -> Result<AnfrageEcho, Error> {
         let mut msg = AnfrageEcho {
             zeichennachricht: None,
+            anwenderkennung: None,
             einzelfaelle: Vec::new(),
         };
         let mut pr = PathReader::new(reader, root);
@@ -508,6 +512,11 @@ impl AnfrageEcho {
                 msg.zeichennachricht = Some(element_text(pr, is_empty, "zeichennachricht")?);
                 Ok(())
             }
+            "anwenderkennung" => {
+                msg.anwenderkennung = Some(element_text(pr, is_empty, "anwenderkennung")?);
+                Ok(())
+            }
+            "antragsteller" => skip_element(pr),
             "auskunft.anforderung" => {
                 msg.einzelfaelle.push(einzelanfrage_echo(pr, is_empty)?);
                 Ok(())
