@@ -1,0 +1,35 @@
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+	<!-- xinneres modules — schemaLocation URLs as they literally appear in
+		the xmeld 26.11 schemas; xmllint resolves by system id first. -->
+	<system systemId="http://www.osci.de/xinneres/allgemeinername/4/xinneres-name.xsd"
+		uri="xinneres/xinneres-name.xsd" />
+	<system systemId="http://www.osci.de/xinneres/auslandsanschrift/5/xinneres-auslandsanschrift.xsd"
+		uri="xinneres/xinneres-auslandsanschrift.xsd" />
+	<system systemId="http://www.osci.de/xinneres/basisnachricht/7/xinneres-basisnachricht.xsd"
+		uri="xinneres/xinneres-basisnachricht.xsd" />
+	<system systemId="http://www.osci.de/xinneres/behoerde/7/xinneres-behoerde.xsd"
+		uri="xinneres/xinneres-behoerde.xsd" />
+	<system systemId="http://www.osci.de/xinneres/codes/gemeindeverzeichnis/3/xinneres-codes-gemeindeverzeichnis.xsd"
+		uri="xinneres/xinneres-codes-gemeindeverzeichnis.xsd" />
+	<system systemId="http://www.osci.de/xinneres/datum/2/xinneres-datum.xsd"
+		uri="xinneres/xinneres-datum.xsd" />
+	<system systemId="http://www.osci.de/xinneres/geschlecht/1/xinneres-geschlecht.xsd"
+		uri="xinneres/xinneres-geschlecht.xsd" />
+	<system systemId="http://www.osci.de/xinneres/idnr/2/xinneres-idnr.xsd"
+		uri="xinneres/xinneres-idnr.xsd" />
+	<system systemId="http://www.osci.de/xinneres/meldeanschrift/5/xinneres-meldeanschrift.xsd"
+		uri="xinneres/xinneres-meldeanschrift.xsd" />
+	<system systemId="http://www.osci.de/xinneres/nachrichtentypen/7/xinneres-nachrichtentypen.xsd"
+		uri="xinneres/xinneres-nachrichtentypen.xsd" />
+	<system systemId="http://www.osci.de/xinneres/postanschrift/5/xinneres-postanschrift.xsd"
+		uri="xinneres/xinneres-postanschrift.xsd" />
+	<system systemId="http://www.osci.de/xinneres/rueckweisung/6/xinneres-rueckweisung.xsd"
+		uri="xinneres/xinneres-rueckweisung.xsd" />
+	<!-- xoev shared schemata -->
+	<system systemId="http://xoev.de/schemata/basisnachricht/unqualified/g2g/1_1/xoev-basisnachricht-unqualified-g2g_1.1.xsd"
+		uri="xoev/xoev-basisnachricht-unqualified-g2g_1.1.xsd" />
+	<system systemId="http://xoev.de/schemata/code/1_0/xoev-code.xsd"
+		uri="xoev/xoev-code.xsd" />
+	<system systemId="https://xoev.de/schemata/din/91379/2022-08/din-norm-91379-datatypes.xsd"
+		uri="xoev/din-norm-91379-datatypes.xsd" />
+</catalog>
