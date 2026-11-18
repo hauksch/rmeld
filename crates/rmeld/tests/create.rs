@@ -349,3 +349,93 @@ fn json_contract_carries_the_full_suchprofil() {
         flat.contains("<geschlecht listVersionID=\"1\"><code xmlns=\"\">d</code></geschlecht>")
     );
 }
+
+// ─── phase 3: Wiederholanfrage ──────────────────────────────────────────
+
+#[test]
+fn wiederholanfrage_serializes_in_the_steuerungsinformationen_sequence() {
+    // The Behörde could not finish: it answered with auftragsnummer and
+    // asked to come back (anzahlderverbleibendenversuche > 0). The repeat
+    // request references the previous order.
+    let mut c = base_input();
+    c.anfragen[0].wiederholanfrage = Some(rmeld::Wiederholanfrage {
+        auftragsnummer_alteanfrage: Some("A-2026-777".to_string()),
+        auftragspositionsnummer_alteanfrage: Some("P-3".to_string()),
+    });
+    let xml = Anfrage::build(c)
+        .expect("valid")
+        .to_xml()
+        .expect("serialize");
+    rmeld::validate(xml.as_bytes()).expect("wiederholanfrage must pass the official XSD");
+    let flat = flat(&xml);
+    // Schema sequence: option.auskunft*, wiederholanfrage?,
+    // verzichtAufMitteilung? — here only the reference.
+    let steuerung = flat
+        .split("<steuerungsinformationen>")
+        .nth(1)
+        .and_then(|s| s.split("</steuerungsinformationen>").next())
+        .expect("steuerungsinformationen container");
+    assert_eq!(
+        steuerung,
+        "<wiederholanfrage><auftragsnummer.alteanfrage>A-2026-777</auftragsnummer.alteanfrage><auftragspositionsnummer.alteanfrage>P-3</auftragspositionsnummer.alteanfrage></wiederholanfrage>"
+    );
+}
+
+#[test]
+fn wiederholanfrage_alone_renders_the_container() {
+    let mut c = base_input();
+    c.anfragen[0].wiederholanfrage = Some(rmeld::Wiederholanfrage {
+        auftragsnummer_alteanfrage: Some("A-1".to_string()),
+        auftragspositionsnummer_alteanfrage: None,
+    });
+    let xml = Anfrage::build(c)
+        .expect("valid")
+        .to_xml()
+        .expect("serialize");
+    rmeld::validate(xml.as_bytes())
+        .expect("single-reference wiederholanfrage must pass the official XSD");
+    let flat = flat(&xml);
+    assert!(flat.contains("<steuerungsinformationen><wiederholanfrage><auftragsnummer.alteanfrage>A-1</auftragsnummer.alteanfrage></wiederholanfrage></steuerungsinformationen>"));
+}
+
+#[test]
+fn wiederholanfrage_sequence_with_option_and_verzicht() {
+    let mut c = base_input();
+    c.anfragen[0].option_auskunft = vec!["04".to_string()];
+    c.anfragen[0].verzicht_auf_mitteilung = true;
+    c.anfragen[0].wiederholanfrage = Some(rmeld::Wiederholanfrage {
+        auftragsnummer_alteanfrage: Some("A-2".to_string()),
+        auftragspositionsnummer_alteanfrage: None,
+    });
+    let xml = Anfrage::build(c)
+        .expect("valid")
+        .to_xml()
+        .expect("serialize");
+    rmeld::validate(xml.as_bytes())
+        .expect("all three steuerungsinformationen children must pass the official XSD");
+    let flat = flat(&xml);
+    let steuerung = flat
+        .split("<steuerungsinformationen>")
+        .nth(1)
+        .and_then(|s| s.split("</steuerungsinformationen>").next())
+        .expect("container");
+    // option.auskunft first, wiederholanfrage second, verzicht last.
+    let opt = steuerung.find("<option.auskunft>").expect("option");
+    let wh = steuerung
+        .find("<wiederholanfrage>")
+        .expect("wiederholanfrage");
+    let vz = steuerung.find("<verzichtAufMitteilung>").expect("verzicht");
+    assert!(
+        opt < wh && wh < vz,
+        "schema sequence order violated: {steuerung}"
+    );
+}
+
+#[test]
+fn wiederholanfrage_without_any_reference_fails_fast() {
+    let mut c = base_input();
+    c.anfragen[0].wiederholanfrage = Some(rmeld::Wiederholanfrage::default());
+    let err = Anfrage::build(c).expect_err("empty reference names no order");
+    assert!(matches!(err, rmeld::Error::InvalidRequest(_)), "got {err}");
+    assert!(err.to_string().contains("wiederholanfrage"), "got {err}");
+}

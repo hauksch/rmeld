@@ -95,9 +95,12 @@ fixtures validate; every fixture in tests/fixtures proves its rule):
   **mandatory on the wire** even though a Fachanwendung thinks of it as
   optional (rmeld fills `{zeichennachricht}-{position}` when absent).
   `steuerungsinformationen` sits **after** datenZurAnfrage in the
-  sequence (option.auskunft codes 01/04, verzichtAufMitteilung;
-  the position-level `anzahlderverbleibendenversuche` answer side
-  carries the Wiederholanfrage steering).
+  sequence (option.auskunft codes 01/04, wiederholanfrage reference to a
+  previous order — `auftragsnummer.alteanfrage`/
+  `auftragspositionsnummer.alteanfrage`, verzichtAufMitteilung; the
+  answer-side steering (`auftragsnummer` message level,
+  `auftragspositionsnummer` + `anzahlderverbleibendenversuche` per
+  position) is what a Wiederholanfrage references).
 - **Suchprofil** (datenZurAnfrage, in schema sequence order): name
   (nachname + vornamen, both required on the wire), anschrift? (Inland:
   AGS?, hausnummer?, PLZ/Strasse/Wohnort required), ordensname?,
@@ -256,9 +259,6 @@ intermediary-contract list in §8. If a contract document ever lands,
 6. **CI has not run yet** — no git remote is configured, so the
    workflows (fmt/clippy/test/cargo-deny on GitHub runners with libxml2
    2.15) are exercised locally only. Push to GitHub to arm them.
-7. **wiederholanfrage order references** (steuerungsinformationen/
-   wiederholanfrage, referencing a previous auftragsnummer) are not
-   exposed yet — single-shot flows work; repeat-request flows need this.
 
 ## 9. Source register
 

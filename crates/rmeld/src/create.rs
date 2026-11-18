@@ -149,11 +149,34 @@ pub struct EinzelanfrageInput {
     /// wire when set).
     #[serde(default)]
     pub verzicht_auf_mitteilung: bool,
+    /// steuerungsinformationen/wiederholanfrage — reference to the order
+    /// this request repeats, for Behörden that could not finish in one
+    /// pass. Take `auftragsnummer` and `auftragspositionsnummer` from the
+    /// previous [`crate::Antwort`] (message-level field and position field
+    /// of the same names). At least one reference is required; both
+    /// together when the previous order had multiple positions.
+    #[serde(default)]
+    pub wiederholanfrage: Option<Wiederholanfrage>,
     /// anfragedaten/gewerblicherZweck — codes 1–10 (Adressabgleich,
     /// Werbung, Adresshandel, …) und/oder Freitext; `geschaeftszeichen` is
     /// mandatory when the Zweck is supplied (schema requirement).
     #[serde(default)]
     pub gewerblicher_zweck: Option<GewerblicherZweck>,
+}
+
+/// Wiederholanfrage reference (type.wiederholanfrage): the order being
+/// asked about again. Both fields optional on the wire; rmeld requires at
+/// least one (an empty reference is meaningless — fail fast).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct Wiederholanfrage {
+    /// auftragsnummer.alteanfrage — the previous order number
+    /// (Antwort.auftragsnummer).
+    #[serde(default)]
+    pub auftragsnummer_alteanfrage: Option<String>,
+    /// auftragspositionsnummer.alteanfrage — the previous position
+    /// (AuskunftPosition.auftragspositionsnummer).
+    #[serde(default)]
+    pub auftragspositionsnummer_alteanfrage: Option<String>,
 }
 
 /// Partially known date (xida:TeilbekanntesDatumMitUnbekannt wire shape).
@@ -424,6 +447,20 @@ impl Anfrage {
             {
                 return Err(Error::InvalidRequest(
                     "familienstand_beginn.datum must not be \"unbekannt\" (xida:TeilbekanntesDatum has no unbekannt arm)",
+                ));
+            }
+            if let Some(w) = &anfrage.wiederholanfrage
+                && w.auftragsnummer_alteanfrage
+                    .as_deref()
+                    .unwrap_or("")
+                    .is_empty()
+                && w.auftragspositionsnummer_alteanfrage
+                    .as_deref()
+                    .unwrap_or("")
+                    .is_empty()
+            {
+                return Err(Error::InvalidRequest(
+                    "wiederholanfrage requires at least one of auftragsnummer_alteanfrage / auftragspositionsnummer_alteanfrage — an empty reference names no order",
                 ));
             }
             if let Some(zweck) = &anfrage.gewerblicher_zweck {
@@ -735,11 +772,28 @@ impl Anfrage {
             writer.write_event(Event::End(BytesEnd::new("datenZurAnfrage")))?;
 
             // steuerungsinformationen — sequence: option.auskunft*,
-            // (wiederholanfrage: not exposed), verzichtAufMitteilung?.
-            if !einzel.option_auskunft.is_empty() || einzel.verzicht_auf_mitteilung {
+            // wiederholanfrage?, verzichtAufMitteilung?.
+            if !einzel.option_auskunft.is_empty()
+                || einzel.verzicht_auf_mitteilung
+                || einzel.wiederholanfrage.is_some()
+            {
                 writer.write_event(Event::Start(q("steuerungsinformationen")))?;
                 for option in &einzel.option_auskunft {
                     write_code_element(&mut writer, q("option.auskunft"), option)?;
+                }
+                if let Some(w) = &einzel.wiederholanfrage {
+                    writer.write_event(Event::Start(q("wiederholanfrage")))?;
+                    if let Some(n) = &w.auftragsnummer_alteanfrage {
+                        write_text_element(&mut writer, q("auftragsnummer.alteanfrage"), n)?;
+                    }
+                    if let Some(p) = &w.auftragspositionsnummer_alteanfrage {
+                        write_text_element(
+                            &mut writer,
+                            q("auftragspositionsnummer.alteanfrage"),
+                            p,
+                        )?;
+                    }
+                    writer.write_event(Event::End(BytesEnd::new("wiederholanfrage")))?;
                 }
                 if einzel.verzicht_auf_mitteilung {
                     write_text_element(&mut writer, q("verzichtAufMitteilung"), "true")?;

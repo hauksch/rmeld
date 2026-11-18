@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — phase 3
+
+- `create` supports **Wiederholanfragen**: `wiederholanfrage` in the
+  JSON references a previous order (`auftragsnummer.alteanfrage` /
+  `auftragspositionsnummer.alteanfrage` — take both from the parsed
+  previous `Antwort`). At least one reference is required, fail-fast.
+  Together with the already-parsed answer-side steering
+  (`auftragsnummer`, `auftragspositionsnummer`,
+  `anzahlderverbleibendenversuche`) the 0600/0601 surface is complete
+  for Behörden that answer in multiple passes.
+
 ## Unreleased — phase 2
 
 - Full Suchprofil in `create`: Geschlecht (m/w/x/d) oder Familienstand,
