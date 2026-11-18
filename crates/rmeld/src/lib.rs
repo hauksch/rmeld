@@ -28,7 +28,7 @@ pub use classification::{
 pub use create::{
     Anfrage, AnfrageInput, AnschriftInput, Datum, EinzelanfrageInput, FamilienstandBeginn,
     GeschlechtOderFamilienstand, GesetzlicherVertreter, GewerblicherZweck, OrtMitStaat,
-    PartialDatum, Partner,
+    PartialDatum, Partner, Wiederholanfrage,
 };
 pub use error::Error;
 pub use parse::{
