@@ -78,5 +78,8 @@
         <code xmlns="">08</code>
       </rueckweisung>
     </ergebnis>
+    <steuerungsinformationen>
+      <anzahlderverbleibendenversuche>2</anzahlderverbleibendenversuche>
+    </steuerungsinformationen>
   </auskunft.antwort>
 </melderegisterauskunfteinfach.antwort.0601>

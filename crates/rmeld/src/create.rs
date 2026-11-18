@@ -3,11 +3,14 @@
 //!
 //! The JSON contract ([`AnfrageInput`]) is what the Fachanwendung hands
 //! over; the XSD gate (crate::validate) proves the emitted XML against the
-//! official XMeld 26.11 schemas. Deliberately narrow: phase 1 supports the
-//! name + Anschrift + Geburtsdatum search triple and the mandatory
-//! Werbung/Adresshandel declaration. The schema's rarer Suchprofil
-//! criteria (Ordensname, Partnername, Sterbetag, …) are phase-2 material —
-//! absent support is a documented limit, not silent dropping.
+//! official XMeld 26.11 schemas. The full Suchprofil is supported: name +
+//! Anschrift or name + two further search criteria (the fachlich Suchregel,
+//! enforced fail-fast in [`Anfrage::build`]), partial birth dates,
+//! Geschlecht/Familienstand, Geburts- und Sterbeort, Sterbetag,
+//! Einzugs-/Auszugsdatum, Ordnens-/Künstlername, gesetzlicher Vertreter,
+//! Partnername, gewerblicher Zweck and steuerungsinformationen. Known
+//! limitation: `wiederholanfrage` referencing previous orders is not
+//! exposed yet.
 
 use quick_xml::Writer;
 use quick_xml::events::{BytesEnd, Event};
@@ -68,7 +71,16 @@ pub struct RootAttributesInput {
 }
 
 /// One Einzelanfrage (one Suchprofil) inside the 0600 Sammelnachricht.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// The fachlich Suchregel (datenZurAnfrage documentation, XMeld 26.11):
+/// „Die Namensangaben sind verpflichtend, von den sonstigen Suchkriterien
+/// sind mindestens eine Anschrift, oder zwei der weiteren zulässigen Daten
+/// anzugeben.“ — enforced fail-fast in [`Anfrage::build`]. Which criteria
+/// count as „zulässige Daten“ is a Schematron-level rule rmeld cannot read
+/// from the XSD; it conservatively counts every supplied optional criterion
+/// and lets the Behörde have the final word (a rejected Suchprofil arrives
+/// as Nichterstellung.grund 08).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct EinzelanfrageInput {
     /// Correlation ID for this Einzelanfrage (zeicheneinzelfall), echoed
     /// per Auskunft position. Optional in the JSON — but **mandatory on
@@ -76,20 +88,72 @@ pub struct EinzelanfrageInput {
     /// emits `{zeichennachricht}-{1-based position}` deterministically.
     #[serde(default)]
     pub zeicheneinzelfall: Option<String>,
-    /// Familienname (Suchprofil.name/nachname). Required.
+    /// Familienname (Suchprofil.name/nachname). Required on the wire.
     pub nachname: String,
-    /// Vornamen (Suchprofil.name/vornamen). Required.
+    /// Vornamen (Suchprofil.name/vornamen). Required on the wire.
     pub vornamen: String,
     /// Geburtsdatum, fully or partially known: `YYYY-MM-DD`, `YYYY-MM`,
-    /// `YYYY`, or `"unbekannt"`. Optional — but the fachlich Suchregel
-    /// („mindestens eine Anschrift, oder zwei der weiteren zulässigen
-    /// Daten“) keeps the Anschrift mandatory in phase 1, so the effective
-    /// Suchprofil is name + Anschrift (+ Geburtsdatum).
+    /// `YYYY`, or `"unbekannt"`.
     #[serde(default)]
     pub geburtsdatum: Option<PartialDatum>,
-    /// Anschrift des Suchprofils (Inland). Required in phase 1 — see the
-    /// Suchregel note on [EinzelanfrageInput::geburtsdatum].
-    pub anschrift: AnschriftInput,
+    /// Anschrift des Suchprofils (Inland). Optional — one Anschrift or two
+    /// further criteria satisfy the Suchregel.
+    #[serde(default)]
+    pub anschrift: Option<AnschriftInput>,
+    /// Ordensname (datatypeC).
+    #[serde(default)]
+    pub ordensname: Option<String>,
+    /// Künstlername (datatypeC).
+    #[serde(default)]
+    pub kuenstlername: Option<String>,
+    /// Geburtsort und -staat (ohne Datum) — für Personen ohne bekannten
+    /// Tag. `staat_code` carries a Code.Gebiet value (Destatis
+    /// Staatsgebiete); the `listVersionID` attribute defaults to
+    /// [`gemeindeverzeichnis_version`]'s sibling constant.
+    #[serde(default)]
+    pub geburtsort: Option<OrtMitStaat>,
+    /// Geschlecht (Code `m`/`w`/`x`/`d`, XInneres-Codeliste geschlecht v1)
+    /// oder Familienstand (Codes `EA`, `GS`, `LA`, `LD`, `LE`, `LP`, `LV`,
+    /// `NB`, `VH`, `VW`). Both together are not zulässig — the wire is a
+    /// choice and the input is one enum.
+    #[serde(default)]
+    pub geschlecht_oder_familienstand: Option<GeschlechtOderFamilienstand>,
+    /// Gesetzlicher Vertreter — natürliche Person (Familienname +
+    /// Vornamen) or juristische Person (Name).
+    #[serde(default)]
+    pub gesetzlicher_vertreter: Option<GesetzlicherVertreter>,
+    /// Einzugsdatum (`YYYY-MM-DD`).
+    #[serde(default)]
+    pub einzugsdatum: Option<Datum>,
+    /// Auszugsdatum (`YYYY-MM-DD`).
+    #[serde(default)]
+    pub auszugsdatum: Option<Datum>,
+    /// Beginn der letzten Ehe/Lebenspartnerschaft, Ort und (optional)
+    /// Staat; Datum ohne „unbekannt“ (xida:TeilbekanntesDatum).
+    #[serde(default)]
+    pub familienstand_beginn: Option<FamilienstandBeginn>,
+    /// Name des Partners/der Partnerin (alle Felder optional auf dem Draht).
+    #[serde(default)]
+    pub partner: Option<Partner>,
+    /// Sterbetag (`YYYY-MM-DD`, via type.Sterbetag).
+    #[serde(default)]
+    pub sterbetag: Option<Datum>,
+    /// Sterbeort und -staat (ohne Datum).
+    #[serde(default)]
+    pub sterbeort: Option<OrtMitStaat>,
+    /// steuerungsinformationen/option.auskunft codes: `01` (Aussteuerung
+    /// zur manuellen Nachbearbeitung) and/or `04` (urschriftlicher Druck).
+    #[serde(default)]
+    pub option_auskunft: Vec<String>,
+    /// steuerungsinformationen/verzichtAufMitteilung (fixed `true` on the
+    /// wire when set).
+    #[serde(default)]
+    pub verzicht_auf_mitteilung: bool,
+    /// anfragedaten/gewerblicherZweck — codes 1–10 (Adressabgleich,
+    /// Werbung, Adresshandel, …) und/oder Freitext; `geschaeftszeichen` is
+    /// mandatory when the Zweck is supplied (schema requirement).
+    #[serde(default)]
+    pub gewerblicher_zweck: Option<GewerblicherZweck>,
 }
 
 /// Partially known date (xida:TeilbekanntesDatumMitUnbekannt wire shape).
@@ -196,6 +260,141 @@ pub struct AnschriftInput {
     pub wohnort: String,
 }
 
+/// Ort mit (optionalem) Staat — geburtsortUndStaat / sterbeortUndStaat.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OrtMitStaat {
+    /// Der Ort (datatypeC). Required on the wire.
+    pub ort: String,
+    /// Code.Gebiet value (Destatis Staatsgebiete, e.g. „ITA“ for Italien);
+    /// `listVersionID` defaults to [`gebiet_version`].
+    #[serde(default)]
+    pub staat_code: Option<String>,
+}
+
+/// Geschlecht oder Familienstand — the wire is a choice, the input is one
+/// enum. Codes are kept raw: `m`/`w`/`x`/`d` (geschlecht, Codeliste v1)
+/// or the DSMeld familienstand codes (`EA`, `GS`, `LA`, `LD`, `LE`, `LP`,
+/// `LV`, `NB`, `VH`, `VW`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum GeschlechtOderFamilienstand {
+    /// `geschlecht` — Code.Geschlecht wrapper.
+    Geschlecht(String),
+    /// `familienstand` — Code.Familienstand wrapper.
+    Familienstand(String),
+}
+
+/// Gesetzlicher Vertreter — choice auf dem Draht.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum GesetzlicherVertreter {
+    /// Natürliche Person: Familienname + Vornamen.
+    Natuerlich {
+        /// Familienname des Vertreters.
+        familienname: String,
+        /// Vornamen des Vertreters.
+        vornamen: String,
+    },
+    /// Juristische Person: der Name als Zeichenkette.
+    Juristisch(String),
+}
+
+/// Beginn der letzten Ehe/Lebenspartnerschaft, mit Ort. Das Datum ist ein
+/// TeilbekanntesDatum (JJJJ-MM-TT, JJJJ-MM, JJJJ) — „unbekannt“ is
+/// rejected here (the wire type has no unbekannt arm).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FamilienstandBeginn {
+    /// Datum des Beginns (teilbekannt).
+    pub datum: PartialDatum,
+    /// ort.letzte.ehe.oder.lp (datatypeC). Required on the wire.
+    pub ort: String,
+    /// ortstaat.letzte.ehe.oder.lp (Code.Gebiet).
+    #[serde(default)]
+    pub staat_code: Option<String>,
+    /// datumBeginnVorausgegangeneLP (`YYYY-MM-DD`).
+    #[serde(default)]
+    pub datum_vorausgegangene_lp: Option<Datum>,
+}
+
+/// Partnername — alle Felder optional auf dem Draht
+/// (type.NameNatuerlichePerson.Partner).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct Partner {
+    /// Familienname des Partners (FamiliennameUnstrukturiert/nachname).
+    #[serde(default)]
+    pub familienname: Option<String>,
+    /// Geburtsname des Partners (AllgemeinerName).
+    #[serde(default)]
+    pub geburtsname: Option<String>,
+    /// Vornamen des Partners (AllgemeinerName).
+    #[serde(default)]
+    pub vornamen: Option<String>,
+    /// Doktorgrad des Partners.
+    #[serde(default)]
+    pub doktorgrad: Option<String>,
+}
+
+/// Gewerblicher Zweck nach § 44 Abs. 1 Satz 2 BMG — codes 1–10 der
+/// Schlüsseltabelle melderegisterauskunft.gewerblicher.zweck (1
+/// Adressabgleich, 2 Adressermittlung, 3 Adressabgleich für Dritte,
+/// 4 Aktualisierung eigener Bestandsdaten, 5 Adresshistorisierung,
+/// 6 Forderungsmanagement, 7 Bonitätsrisikoprüfungen, 8 Werbung,
+/// 9 Adresshandel, 10 Markt-, Meinungs- oder Sozialforschung) und/oder
+/// Freitext; `geschaeftszeichen` is schema-mandatory.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GewerblicherZweck {
+    /// Codes 1–10 aus der Schlüsseltabelle.
+    #[serde(default)]
+    pub codes: Vec<String>,
+    /// Konkreter Zweck als Freitext, falls kein Code passt.
+    #[serde(default)]
+    pub freitext: Option<String>,
+    /// geschaeftszeichen — required when the Zweck is supplied.
+    pub geschaeftszeichen: String,
+}
+
+/// A full calendar date (`YYYY-MM-DD`), validated at deserialization —
+/// the wire type is a plain `xs:date` with a pattern (xida:Tagesdatum).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "String")]
+pub struct Datum(String);
+
+impl Datum {
+    /// The validated date string.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl TryFrom<String> for Datum {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        let s = s.trim().to_string();
+        let parts: Vec<&str> = s.split('-').collect();
+        let ok = parts.len() == 3
+            && parts
+                .iter()
+                .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()))
+            && parts[0].len() == 4
+            && parts[1].len() == 2
+            && parts[2].len() == 2;
+        if ok {
+            Ok(Datum(s))
+        } else {
+            Err(format!("date must be YYYY-MM-DD, got {s:?}"))
+        }
+    }
+}
+
+impl std::str::FromStr for Datum {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Datum::try_from(s.to_string())
+    }
+}
+
 /// A built 0600 message, ready to serialize.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Anfrage {
@@ -208,7 +407,10 @@ pub struct Anfrage {
 impl Anfrage {
     /// Validate the fachlich invariants the XSD cannot express and build
     /// the message. Fail-fast per house rules: every problem is a hard
-    /// error, never a warning.
+    /// error, never a warning. The big one is the Suchregel („mindestens
+    /// eine Anschrift, oder zwei der weiteren zulässigen Daten“); see the
+    /// [EinzelanfrageInput] docs for the conservative reading of
+    /// „zulässige Daten“.
     pub fn build(input: AnfrageInput) -> Result<Anfrage, Error> {
         if input.anfragen.is_empty() {
             return Err(Error::InvalidRequest(
@@ -216,13 +418,25 @@ impl Anfrage {
             ));
         }
         for anfrage in &input.anfragen {
-            if anfrage.anschrift.postleitzahl.is_empty()
-                || anfrage.anschrift.strasse.is_empty()
-                || anfrage.anschrift.wohnort.is_empty()
+            validate_suchregel(anfrage)?;
+            if let Some(beginn) = &anfrage.familienstand_beginn
+                && beginn.datum.is_unbekannt()
             {
                 return Err(Error::InvalidRequest(
-                    "Anschrift requires postleitzahl, strasse and wohnort (the phase-1 Suchprofil keeps the Anschrift mandatory: „mindestens eine Anschrift, oder zwei der weiteren zulässigen Daten“)",
+                    "familienstand_beginn.datum must not be \"unbekannt\" (xida:TeilbekanntesDatum has no unbekannt arm)",
                 ));
+            }
+            if let Some(zweck) = &anfrage.gewerblicher_zweck {
+                if zweck.codes.is_empty() && zweck.freitext.as_deref().unwrap_or("").is_empty() {
+                    return Err(Error::InvalidRequest(
+                        "gewerblicher_zweck requires at least one code or a freitext",
+                    ));
+                }
+                if zweck.geschaeftszeichen.trim().is_empty() {
+                    return Err(Error::InvalidRequest(
+                        "gewerblicher_zweck.geschaeftszeichen is mandatory (type.GewerblicherZweck)",
+                    ));
+                }
             }
         }
         if input.empfaenger_behoerdenkennung.trim().is_empty() {
@@ -314,10 +528,35 @@ impl Anfrage {
         for (position, einzel) in self.input.anfragen.iter().enumerate() {
             let position = position + 1;
             writer.write_event(Event::Start(q("auskunft.anforderung")))?;
-            // anfragedaten: the Werbung/Adresshandel declaration is the
-            // fachliche Kernpflicht — its absence (code 10) is the one
-            // Nichterstellung the Fachanwendung controls.
+
+            // anfragedaten — sequence order matters: gewerblicherZweck?,
+            // zeicheneinzelfall?, zumZweckDerWerbungOderAdresshandel.
+            // The Werbung/Adresshandel declaration is the fachliche
+            // Kernpflicht — its absence (code 10) is the one Nichterstellung
+            // the Fachanwendung controls.
             writer.write_event(Event::Start(q("anfragedaten")))?;
+            if let Some(zweck) = &einzel.gewerblicher_zweck {
+                writer.write_event(Event::Start(q("gewerblicherZweck")))?;
+                writer.write_event(Event::Start(q("angabeDesZwecks")))?;
+                for code in &zweck.codes {
+                    let mut wrapper = q("code");
+                    wrapper.push_attribute(("listVersionID", gewerblicher_zweck_version()));
+                    write_code_element(&mut writer, wrapper, code)?;
+                }
+                if let Some(freitext) = &zweck.freitext {
+                    write_text_element(&mut writer, q("freitext"), freitext)?;
+                }
+                writer.write_event(Event::End(BytesEnd::new("angabeDesZwecks")))?;
+                write_text_element(
+                    &mut writer,
+                    q("geschaeftszeichen"),
+                    &zweck.geschaeftszeichen,
+                )?;
+                writer.write_event(Event::End(BytesEnd::new("gewerblicherZweck")))?;
+            }
+            if let Some(z) = &einzel.zeicheneinzelfall {
+                write_text_element(&mut writer, q("zeicheneinzelfall"), z)?;
+            }
             write_text_element(
                 &mut writer,
                 q("zumZweckDerWerbungOderAdresshandel"),
@@ -325,12 +564,13 @@ impl Anfrage {
             )?;
             writer.write_event(Event::End(BytesEnd::new("anfragedaten")))?;
 
+            // datenZurAnfrage — the full Suchprofil, in schema sequence
+            // order. The official reference messages are the form
+            // convention ground truth (qualified wrappers, unqualified
+            // leaf data).
             writer.write_event(Event::Start(q("datenZurAnfrage")))?;
             writer.write_event(Event::Start(q("name")))?;
             {
-                // Suchprofil.Name children are xmeld-qualified (the
-                // restriction re-declares them); only their AllgemeinerName
-                // payloads are unqualified.
                 writer.write_event(Event::Start(q("nachname")))?;
                 write_allgemeiner_name(&mut writer, &einzel.nachname)?;
                 writer.write_event(Event::End(BytesEnd::new("nachname")))?;
@@ -340,22 +580,30 @@ impl Anfrage {
             }
             writer.write_event(Event::End(BytesEnd::new("name")))?;
 
-            let anschrift = &einzel.anschrift;
-            writer.write_event(Event::Start(q("anschrift")))?;
-            {
-                if let Some(ags) = &anschrift.ags {
-                    let mut gs = u("gemeindeschluessel");
-                    gs.push_attribute(("listVersionID", gemeindeverzeichnis_version()));
-                    write_code_element(&mut writer, gs, ags)?;
+            if let Some(anschrift) = &einzel.anschrift {
+                writer.write_event(Event::Start(q("anschrift")))?;
+                {
+                    if let Some(ags) = &anschrift.ags {
+                        let mut gs = u("gemeindeschluessel");
+                        gs.push_attribute(("listVersionID", gemeindeverzeichnis_version()));
+                        write_code_element(&mut writer, gs, ags)?;
+                    }
+                    if let Some(hn) = &anschrift.hausnummer {
+                        write_text_element(&mut writer, u("hausnummer"), hn)?;
+                    }
+                    write_text_element(&mut writer, u("postleitzahl"), &anschrift.postleitzahl)?;
+                    write_text_element(&mut writer, u("strasse"), &anschrift.strasse)?;
+                    write_text_element(&mut writer, u("wohnort"), &anschrift.wohnort)?;
                 }
-                if let Some(hn) = &anschrift.hausnummer {
-                    write_text_element(&mut writer, u("hausnummer"), hn)?;
-                }
-                write_text_element(&mut writer, u("postleitzahl"), &anschrift.postleitzahl)?;
-                write_text_element(&mut writer, u("strasse"), &anschrift.strasse)?;
-                write_text_element(&mut writer, u("wohnort"), &anschrift.wohnort)?;
+                writer.write_event(Event::End(BytesEnd::new("anschrift")))?;
             }
-            writer.write_event(Event::End(BytesEnd::new("anschrift")))?;
+
+            if let Some(o) = &einzel.ordensname {
+                write_text_element(&mut writer, q("ordensname"), o)?;
+            }
+            if let Some(k) = &einzel.kuenstlername {
+                write_text_element(&mut writer, q("kuenstlername"), k)?;
+            }
 
             if let Some(geb) = &einzel.geburtsdatum {
                 // xida:TeilbekanntesDatumMitUnbekannt = choice(
@@ -373,7 +621,131 @@ impl Anfrage {
                 }
                 writer.write_event(Event::End(BytesEnd::new("geburtsdatum")))?;
             }
+
+            if let Some(ort) = &einzel.geburtsort {
+                write_ort_mit_staat(&mut writer, "geburtsortUndStaat", "geburtsort", ort)?;
+            }
+
+            if let Some(gof) = &einzel.geschlecht_oder_familienstand {
+                writer.write_event(Event::Start(q("geschlechtOderFamilienstand")))?;
+                match gof {
+                    GeschlechtOderFamilienstand::Geschlecht(code) => {
+                        let mut wrapper = q("geschlecht");
+                        wrapper.push_attribute(("listVersionID", geschlecht_version()));
+                        write_code_element(&mut writer, wrapper, code)?;
+                    }
+                    GeschlechtOderFamilienstand::Familienstand(code) => {
+                        write_code_element(&mut writer, q("familienstand"), code)?;
+                    }
+                }
+                writer.write_event(Event::End(BytesEnd::new("geschlechtOderFamilienstand")))?;
+            }
+
+            if let Some(v) = &einzel.gesetzlicher_vertreter {
+                writer.write_event(Event::Start(q("gesetzlicherVertreter.name")))?;
+                match v {
+                    GesetzlicherVertreter::Natuerlich {
+                        familienname,
+                        vornamen,
+                    } => {
+                        writer.write_event(Event::Start(q("nameNatuerlichePerson")))?;
+                        writer.write_event(Event::Start(q("familienname.unstrukturiert")))?;
+                        writer.write_event(Event::Start(q("nachname")))?;
+                        write_allgemeiner_name(&mut writer, familienname)?;
+                        writer.write_event(Event::End(BytesEnd::new("nachname")))?;
+                        writer.write_event(Event::End(BytesEnd::new(
+                            "familienname.unstrukturiert",
+                        )))?;
+                        writer.write_event(Event::Start(q("vornamen")))?;
+                        write_allgemeiner_name(&mut writer, vornamen)?;
+                        writer.write_event(Event::End(BytesEnd::new("vornamen")))?;
+                        writer.write_event(Event::End(BytesEnd::new("nameNatuerlichePerson")))?;
+                    }
+                    GesetzlicherVertreter::Juristisch(name) => {
+                        write_text_element(&mut writer, q("nameJuristischePerson"), name)?;
+                    }
+                }
+                writer.write_event(Event::End(BytesEnd::new("gesetzlicherVertreter.name")))?;
+            }
+
+            if let Some(d) = &einzel.einzugsdatum {
+                write_text_element(&mut writer, q("einzugsdatum"), d.as_str())?;
+            }
+            if let Some(d) = &einzel.auszugsdatum {
+                write_text_element(&mut writer, q("auszugsdatum"), d.as_str())?;
+            }
+
+            if let Some(beginn) = &einzel.familienstand_beginn {
+                writer.write_event(Event::Start(q("familienstandBeginnUndOrt")))?;
+                // TeilbekanntesDatum (no unbekannt arm — build() rejects it).
+                // The wrapper element is xmeld-qualified (the restriction
+                // re-declares it); only its xida children are unqualified.
+                writer.write_event(Event::Start(q("datumBeginn")))?;
+                let inner = u(beginn.datum.granularity.element_name());
+                write_text_element(&mut writer, inner, &beginn.datum.value)?;
+                writer.write_event(Event::End(BytesEnd::new("datumBeginn")))?;
+                write_text_element(&mut writer, q("ort.letzte.ehe.oder.lp"), &beginn.ort)?;
+                if let Some(staat) = &beginn.staat_code {
+                    let mut wrapper = q("ortstaat.letzte.ehe.oder.lp");
+                    wrapper.push_attribute(("listVersionID", gebiet_version()));
+                    write_code_element(&mut writer, wrapper, staat)?;
+                }
+                if let Some(d) = &beginn.datum_vorausgegangene_lp {
+                    write_text_element(&mut writer, q("datumBeginnVorausgegangeneLP"), d.as_str())?;
+                }
+                writer.write_event(Event::End(BytesEnd::new("familienstandBeginnUndOrt")))?;
+            }
+
+            if let Some(p) = &einzel.partner {
+                writer.write_event(Event::Start(q("partner.name")))?;
+                if let Some(f) = &p.familienname {
+                    writer.write_event(Event::Start(q("familienname.unstrukturiert")))?;
+                    writer.write_event(Event::Start(q("nachname")))?;
+                    write_allgemeiner_name(&mut writer, f)?;
+                    writer.write_event(Event::End(BytesEnd::new("nachname")))?;
+                    writer.write_event(Event::End(BytesEnd::new("familienname.unstrukturiert")))?;
+                }
+                if let Some(g) = &p.geburtsname {
+                    writer.write_event(Event::Start(q("geburtsname.unstrukturiert")))?;
+                    write_allgemeiner_name(&mut writer, g)?;
+                    writer.write_event(Event::End(BytesEnd::new("geburtsname.unstrukturiert")))?;
+                }
+                if let Some(v) = &p.vornamen {
+                    writer.write_event(Event::Start(q("vornamen")))?;
+                    write_allgemeiner_name(&mut writer, v)?;
+                    writer.write_event(Event::End(BytesEnd::new("vornamen")))?;
+                }
+                if let Some(d) = &p.doktorgrad {
+                    write_text_element(&mut writer, q("doktorgrad"), d)?;
+                }
+                writer.write_event(Event::End(BytesEnd::new("partner.name")))?;
+            }
+
+            if let Some(d) = &einzel.sterbetag {
+                // type.Sterbetag = wrapper element + inner sterbetag date.
+                writer.write_event(Event::Start(q("sterbetag")))?;
+                write_text_element(&mut writer, q("sterbetag"), d.as_str())?;
+                writer.write_event(Event::End(BytesEnd::new("sterbetag")))?;
+            }
+
+            if let Some(ort) = &einzel.sterbeort {
+                write_ort_mit_staat(&mut writer, "sterbeortUndStaat", "sterbeort", ort)?;
+            }
+
             writer.write_event(Event::End(BytesEnd::new("datenZurAnfrage")))?;
+
+            // steuerungsinformationen — sequence: option.auskunft*,
+            // (wiederholanfrage: not exposed), verzichtAufMitteilung?.
+            if !einzel.option_auskunft.is_empty() || einzel.verzicht_auf_mitteilung {
+                writer.write_event(Event::Start(q("steuerungsinformationen")))?;
+                for option in &einzel.option_auskunft {
+                    write_code_element(&mut writer, q("option.auskunft"), option)?;
+                }
+                if einzel.verzicht_auf_mitteilung {
+                    write_text_element(&mut writer, q("verzichtAufMitteilung"), "true")?;
+                }
+                writer.write_event(Event::End(BytesEnd::new("steuerungsinformationen")))?;
+            }
 
             writer.write_event(Event::Start(q("technische.einzelidentifikation")))?;
             {
@@ -416,6 +788,75 @@ fn write_allgemeiner_name(writer: &mut Writer<&mut Vec<u8>>, value: &str) -> Res
     write_text_element(writer, start, value)
 }
 
+/// Write `geburtsortUndStaat` / `sterbeortUndStaat`:
+/// qualified wrapper, qualified ort text, optional Code.Gebiet staat.
+fn write_ort_mit_staat(
+    writer: &mut Writer<&mut Vec<u8>>,
+    wrapper: &'static str,
+    ort_element: &'static str,
+    ort: &OrtMitStaat,
+) -> Result<(), Error> {
+    writer.write_event(Event::Start(q(wrapper)))?;
+    write_text_element(writer, q(ort_element), &ort.ort)?;
+    if let Some(staat) = &ort.staat_code {
+        let element = if wrapper == "sterbeortUndStaat" {
+            "sterbeortStaat"
+        } else {
+            "geburtsortStaat"
+        };
+        let mut code = q(element);
+        code.push_attribute(("listVersionID", gebiet_version()));
+        write_code_element(writer, code, staat)?;
+    }
+    writer.write_event(Event::End(BytesEnd::new(wrapper)))?;
+    Ok(())
+}
+
+/// The fachlich Suchregel: name (always present) + one Anschrift, or name
+/// + two further criteria.
+///
+/// The set of „zulässige Daten“ is Schematron territory; rmeld
+/// conservatively counts every supplied optional criterion (superset) and
+/// documents the limitation — a Behörde-side rejection arrives as
+/// Nichterstellung.grund 08 and classifies as Rejected, which is the
+/// contract, not a crash.
+fn validate_suchregel(einzel: &EinzelanfrageInput) -> Result<(), Error> {
+    if let Some(anschrift) = &einzel.anschrift {
+        if anschrift.postleitzahl.is_empty()
+            || anschrift.strasse.is_empty()
+            || anschrift.wohnort.is_empty()
+        {
+            return Err(Error::InvalidRequest(
+                "Anschrift requires postleitzahl, strasse and wohnort",
+            ));
+        }
+        return Ok(());
+    }
+    let weitere = [
+        einzel.geburtsdatum.is_some(),
+        einzel.geburtsort.is_some(),
+        einzel.geschlecht_oder_familienstand.is_some(),
+        einzel.gesetzlicher_vertreter.is_some(),
+        einzel.einzugsdatum.is_some(),
+        einzel.auszugsdatum.is_some(),
+        einzel.familienstand_beginn.is_some(),
+        einzel.partner.is_some(),
+        einzel.sterbetag.is_some(),
+        einzel.sterbeort.is_some(),
+        einzel.ordensname.is_some(),
+        einzel.kuenstlername.is_some(),
+    ]
+    .iter()
+    .filter(|x| **x)
+    .count();
+    if weitere < 2 {
+        return Err(Error::InvalidRequest(
+            "Suchregel verletzt: ohne Anschrift sind mindestens zwei weitere Suchkriterien erforderlich („mindestens eine Anschrift, oder zwei der weiteren zulässigen Daten“)",
+        ));
+    }
+    Ok(())
+}
+
 /// Version of the Destatis Gemeindeverzeichnis code list for the
 /// `listVersionID` attribute. The value is the GemeindeVZ version the AGS
 /// is taken from; the fixture pipeline pins one version — the Fachanwendung
@@ -423,6 +864,28 @@ fn write_allgemeiner_name(writer: &mut Writer<&mut Vec<u8>>, value: &str) -> Res
 /// constant, not configuration, until a real need appears.
 fn gemeindeverzeichnis_version() -> &'static str {
     "20260701"
+}
+
+/// Version of the XInneres geschlecht code list
+/// (urn:xoev-de:xinneres:codeliste:geschlecht, v1: m/w/x/d), fetched from
+/// XRepository. Same fixture-constant rationale as above.
+fn geschlecht_version() -> &'static str {
+    "1"
+}
+
+/// Version of the Destatis Staatsgebiete code list
+/// (urn:de:bund:destatis:bevoelkerungsstatistik:schluessel:staatsgebiete).
+/// Open code list — the schema pins no version; the constant keeps the
+/// required attribute populated until a real vintage exists.
+fn gebiet_version() -> &'static str {
+    "2"
+}
+
+/// Version of the gewerblicher Zweck code list
+/// (urn:de:xmeld:schluesseltabelle:melderegisterauskunft.gewerblicher.
+/// zweck, v1: codes 1–10).
+fn gewerblicher_zweck_version() -> &'static str {
+    "1"
 }
 
 /// Current timestamp in xs:dateTime form with offset, second resolution.

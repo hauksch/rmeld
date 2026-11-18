@@ -25,7 +25,11 @@ pub use classification::{
     Anschrift, Classification, Ergebnis, FaultSource, PersonName, Rejection, RejectionSource,
     TechnicalFault,
 };
-pub use create::{Anfrage, AnfrageInput, AnschriftInput, EinzelanfrageInput, PartialDatum};
+pub use create::{
+    Anfrage, AnfrageInput, AnschriftInput, Datum, EinzelanfrageInput, FamilienstandBeginn,
+    GeschlechtOderFamilienstand, GesetzlicherVertreter, GewerblicherZweck, OrtMitStaat,
+    PartialDatum, Partner,
+};
 pub use error::Error;
 pub use parse::{
     AnfrageEcho, Antwort, AuskunftPosition, EinzelanfrageEcho, Message, PositionErgebnis, Rts,
