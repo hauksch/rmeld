@@ -87,12 +87,39 @@ fixtures validate; every fixture in tests/fixtures proves its rule):
   `nachrichtenkopf` = identifikation.nachricht (with Nachrichtennummer
   code 0600) + absender (Kunde) + empfaenger (Behörde, Behördenkennung
   required); then zeichennachricht?, anwenderkennung?, antragsteller?,
-  1..n `auskunft.anforderung` with anfragedaten (incl. the mandatory
+  1..n `auskunft.anforderung` with anfragedaten (gewerblicherZweck?,
+  zeicheneinzelfall?, the mandatory
   `zumZweckDerWerbungOderAdresshandel=false` declaration),
-  datenZurAnfrage (Suchprofil) and technische.einzelidentifikation —
-  whose `zeicheneinzelfall` is **mandatory on the wire** even though a
-  Fachanwendung thinks of it as optional (rmeld fills
-  `{zeichennachricht}-{position}` when absent).
+  datenZurAnfrage (the full Suchprofil — see below) and
+  technische.einzelidentifikation — whose `zeicheneinzelfall` is
+  **mandatory on the wire** even though a Fachanwendung thinks of it as
+  optional (rmeld fills `{zeichennachricht}-{position}` when absent).
+  `steuerungsinformationen` sits **after** datenZurAnfrage in the
+  sequence (option.auskunft codes 01/04, verzichtAufMitteilung;
+  the position-level `anzahlderverbleibendenversuche` answer side
+  carries the Wiederholanfrage steering).
+- **Suchprofil** (datenZurAnfrage, in schema sequence order): name
+  (nachname + vornamen, both required on the wire), anschrift? (Inland:
+  AGS?, hausnummer?, PLZ/Strasse/Wohnort required), ordensname?,
+  kuenstlername?, geburtsdatum? (xida:TeilbekanntesDatumMitUnbekannt —
+  `teilbekanntesDatum` wrapper with jahrMonatTag/jahrMonat/jahr, or
+  `unbekannt=true`), geburtsortUndStaat? (geburtsort +
+  geburtsortStaat as Code.Gebiet), geschlechtOderFamilienstand? (choice:
+  Code.Geschlecht — `listVersionID` **required** — or Code.Familienstand),
+  gesetzlicherVertreter.name?, einzugsdatum?/auszugsdatum? (plain
+  xs:date), familienstandBeginnUndOrt? (datumBeginn as
+  TeilbekanntesDatum — **no unbekannt arm** — plus Ort/Staat),
+  partner.name?, sterbetag? (type.Sterbetag wrapper + inner
+  sterbetag date), sterbeortUndStaat?. The element forms of the
+  criteria were cross-checked against the official KoSIT reference
+  messages (EMRA001–006: e.g. `<xmeld:einzugsdatum>2019-11-01` —
+  qualified with text, no inner wrapper).
+- **Suchregel** (datenZurAnfrage documentation): „Die Namensangaben sind
+  verpflichtend, von den sonstigen Suchkriterien sind mindestens eine
+  Anschrift, oder zwei der weiteren zulässigen Daten anzugeben.“ Which
+  criteria count as „zulässig“ is Schematron territory; rmeld enforces
+  the conservative superset (any two optional criteria qualify) and the
+  Behörde keeps the final word (grund 08).
 - **0601 structure** (`type.datenuebermittlung.b2privat`): mandatory
   `antwortstatus`; 0..n `auskunft.antwort` positions, each echoing the
   Anforderungsdaten and carrying the choice `ergebnis`
@@ -114,6 +141,18 @@ fixtures validate; every fixture in tests/fixtures proves its rule):
     andere Namen, verstorben, manuelle Bearbeitung …).
   - RTS `ruecksendung.einer.nachricht` v5: S* nicht spezifikationskonform,
     T* Zertifikat/Transport, X* XML/Schlüsseltabellen, V* Version.
+  - `melderegisterauskunft.gewerblicher.zweck` v1 (open list in the
+    schema; values from the genericode file on XRepository): 1
+    Adressabgleich, 2 Adressermittlung, 3 Adressabgleich für Dritte,
+    4 Aktualisierung eigener Bestandsdaten, 5 Adresshistorisierung,
+    6 Forderungsmanagement, 7 Bonitätsrisikoprüfungen, 8 Werbung,
+    9 Adresshandel, 10 Markt-, Meinungs- oder Sozialforschung.
+  - XInneres `geschlecht` v1 (open list in the schema; values from the
+    genericode file): `m`, `w`, `x` (keine Angabe), `d` (divers).
+  - DSMeld `familienstand` v2 (enumerated in the schema): `EA`, `GS`,
+    `LA`, `LD`, `LE`, `LP`, `LV`, `NB`, `VH`, `VW`.
+  - Destatis `staatsgebiete` and `ags` (open lists, schema pins no
+    enumeration; `listVersionID` required on their code wrappers).
 - **DIN 91379 `datatypeC` enforces its character subset**: the en-dash
   (–) is rejected by pattern validation. Caught by the XSD gate on a
   fixture; input text with typographic dashes must be transliterated
@@ -159,15 +198,37 @@ temp dir — offline by construction, no path assumptions. xmllint lookup:
 loud error, never a silent skip. libxml2 ≥ 2.13 does not fetch remote
 URLs at all, so the catalog is mandatory.
 
-## 7. XTA envelope — deferred, deliberately
+## 7. XTA envelope — researched verdict: stays outside rmeld
 
-XTA („XÖV Transportauftrag“, XRepository `urn:xoev-de:kosit:standard:xta2`)
-is the wrapping the intermediary sees; rosci treats the payload as opaque
-bytes and merely sniffs the `<XTA>` root. Phase 1: `rmeld create` emits
-the **bare 0600 xMeld message**; the XTA-2 envelope and the „XTA …“-style
-Betreff are a contract with the intermediary, not with rosci. When the
-intermediary's convention is on the table, the wrap belongs inside
-rmeld's create output — phase-2 candidate, schema not vendored yet.
+Phase 2 answered the hand-off's open question properly. What the XTA 2
+standard (XRepository `urn:xoev-de:kosit:standard:xta2`, newest release
+**Version 5.1.1**, AKTUELL) normatively defines:
+
+- an XTA **Webservice** (xtacore.wsdl: sendMessage/getMessage/fetch…)
+  between Fachverfahren and Transportdienstleister — not a file format;
+- the `XTA-ServiceProfile` schemas (namespace
+  `https://xoev.de/transport/xta/serviceprofile/1.3.1`) and the
+  `MessageMetaData` object (namespace `http://www.osci.eu/ws/2014/10/
+  transport`, `OSCI_MessageMetaData_V2.02.xsd`) as the representation of
+  the Transportauftrag.
+
+The `<XTA>`-root **file** that rosci sniffs is a de-facto container
+convention of the transport infrastructure (the „XTA-Datei“ dropped for
+pickup), **published by nobody as a schema**. rosci's own docs say the
+same: envelope version + Betreff are „a contract with the intermediary,
+not with rosci“, and rosci sends anything while merely warning.
+rmeld implementing a guessed envelope would be exactly the
+maybe-correct output the hand-off forbids.
+
+So the recorded decision (superseding the phase-1 „inside rmeld is the
+natural place“ hunch): **rmeld does not wrap**. The Transportauftrag
+metadata is transport-side — rosci's `/v1/send` already carries it
+(`metadata_author`/`metadata_reader`, the MessageMetaData identifiers).
+What rmeld needs from the intermediary, and cannot derive from any
+standard, is exactly two strings: the Betreff convention and, if it
+differs from `<XTA>`, the envelope root — both go on the
+intermediary-contract list in §8. If a contract document ever lands,
+`create` growing an `--xta` wrapper is a contained phase-3 change.
 
 ## 8. What rests on assumptions (honest list)
 
@@ -179,20 +240,25 @@ rmeld's create output — phase-2 candidate, schema not vendored yet.
    demands a datatypeC string; real-world values should match the spec's
    production date — worth one look at a live message from the
    intermediary before go-live.
-3. **Kommunikation.kanal code values** (e.g. „001“ for phone in the
-   fixtures) come from an open XÖV code list whose genericode file was
-   not vendored; the schema enforces no enumeration. Verify against the
-   intermediary's DVDV/Kommunikation conventions.
-4. **GemeindeVZ `listVersionID`** is pinned to „20260701“ in create —
-   a constant, not configuration, until a real DVDV/GemeindeVZ vintage
-   exists to align with.
-5. **Phase-1 Suchprofil scope**: name + Anschrift + Geburtsdatum (full or
-   partial). The schema's rarer criteria (Ordensname, Partnername,
-   Sterbetag, Einzugsdatum, …) are not exposed yet; absence is
-   documented, not silent.
+3. **Code-list vintages in create output** are constants, not
+   configuration: GemeindeVZ „20260701“, geschlecht „1“ (verified
+   against the genericode file), staatsgebiete „2“,
+   gewerblicher.zweck „1“. A real DVDV/GemeindeVZ vintage to align with
+   does not exist yet; when it does, these move to input fields.
+4. **Suchprofil „zulässige Daten“ enumeration**: the Suchregel's
+   authoritative list of what counts as a valid second/third criterion is
+   Schematron-level (the XSD cannot express it). rmeld accepts a
+   conservative superset; a Behörde-side rejection arrives as grund 08.
+5. **Intermediary contract items** (cannot be derived from any standard,
+   per §7): the Betreff convention and, if it differs from `<XTA>`, the
+   envelope root element. Needed verbatim from the intermediary before
+   first live send.
 6. **CI has not run yet** — no git remote is configured, so the
    workflows (fmt/clippy/test/cargo-deny on GitHub runners with libxml2
    2.15) are exercised locally only. Push to GitHub to arm them.
+7. **wiederholanfrage order references** (steuerungsinformationen/
+   wiederholanfrage, referencing a previous auftragsnummer) are not
+   exposed yet — single-shot flows work; repeat-request flows need this.
 
 ## 9. Source register
 
@@ -204,4 +270,5 @@ rmeld's create output — phase-2 candidate, schema not vendored yet.
 - XInneres modules (vendored): https://www.osci.de/xinneres/
 - DIN 91379 datatypes (vendored): https://xoev.de/schemata/din/91379/2022-08/din-norm-91379-datatypes.xsd
 - OSCI-XMeld 3.4 specification (message inventory, PDF): https://www.xrepository.de/details/urn:xoev-de:kosit:standard:xinneres.xmeld_3.4
-- XTA 2 standard (deferred envelope): https://www.xrepository.de/details/urn:xoev-de:kosit:standard:xta2_3
+- XTA 2 standard (§7 verdict): https://www.xrepository.de/details/urn:xoev-de:kosit:standard:xta2 — current release Version 5.1.1 (`urn:…:xta2_5.1.1`, spec PDF 26.07.2024, bundle incl. WSDL + schemas + catalog)
+- XTA 2 gewerblicher-Zweck/geschlecht code lists: XRepository genericode endpoints, e.g. `https://www.xrepository.de/api/xrepository/urn:de:xmeld:schluesseltabelle:melderegisterauskunft.gewerblicher.zweck_1/dokumente` and `urn:xoev-de:xinneres:codeliste:geschlecht`
