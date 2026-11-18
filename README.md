@@ -112,8 +112,10 @@ documented in docs/STANDARD-NOTES.md.
 ## Ground rules
 
 1. Scope discipline: 0600/0601 (+ RTS as the technical-fault vehicle)
-   only. No generic xMeld plumbing „for later“; gemeindeübergreifend and
-   the XTA-2 envelope are phase-2 material with explicit triggers.
+   only. No generic xMeld plumbing „for later“; gemeindeübergreifend is
+   phase-3 material. The `<XTA>` envelope turned out to have **no
+   normative schema** (docs/STANDARD-NOTES.md §7) — it stays an
+   intermediary contract item, not rmeld code.
 2. Every standard fact cites the vendored schemas; assumptions are
    listed as assumptions (docs/STANDARD-NOTES.md §8), never disguised as
    facts.

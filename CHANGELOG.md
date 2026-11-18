@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased — phase 2
+
+- Full Suchprofil in `create`: Geschlecht (m/w/x/d) oder Familienstand,
+  Geburts-/Sterbeort und -staat, Sterbetag, Einzugs-/Auszugsdatum,
+  Ordnens-/Künstlername, gesetzlicher Vertreter, Partnername,
+  steuerungsinformationen (option.auskunft, verzichtAufMitteilung) und
+  gewerblicher Zweck (Codes 1–10 / Freitext + Geschäftszeichen).
+- The Suchregel („mindestens eine Anschrift, oder zwei der weiteren
+  zulässigen Daten“) is enforced fail-fast; Anschrift is no longer
+  mandatory when two further criteria are supplied.
+- `parse`: `anzahlderverbleibendenversuche` (Wiederholanfrage steering)
+  surfaces per Auskunft position.
+- XTA verdict researched and recorded (docs/STANDARD-NOTES.md §7): the
+  `<XTA>`-root container has no normative schema — the envelope stays an
+  intermediary contract item; rmeld does not wrap.
+
 ## Unreleased — phase 1
 
 - Vendored XMeld 26.11 schema set (+ XInneres modules, XÖV schemata)
