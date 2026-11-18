@@ -200,6 +200,9 @@ pub struct AuskunftPosition {
     pub zeicheneinzelfall: Option<String>,
     /// auftragspositionsnummer for Wiederholanfragen, if given.
     pub auftragspositionsnummer: Option<String>,
+    /// steuerungsinformationen/anzahlderverbleibendenversuche — how many
+    /// repeat requests the Behörde still allows for this position.
+    pub anzahl_verbleibende_versuche: Option<u64>,
     /// The fachlich outcome of this position.
     pub ergebnis: PositionErgebnis,
 }
@@ -659,6 +662,7 @@ fn auskunft_position(
     let mut pos = AuskunftPosition {
         zeicheneinzelfall: None,
         auftragspositionsnummer: None,
+        anzahl_verbleibende_versuche: None,
         ergebnis: PositionErgebnis::Daten(neutral_ergebnis()),
     };
     if is_empty {
@@ -681,7 +685,19 @@ fn auskunft_position(
             pos.ergebnis = ergebnis_choice(pr, is_empty)?;
             Ok(())
         }
-        "steuerungsinformationen" => skip_element(pr),
+        "steuerungsinformationen" => {
+            if !is_empty {
+                pr.children(|pr, inner, is_empty| match inner {
+                    "anzahlderverbleibendenversuche" => {
+                        let text = element_text(pr, is_empty, "anzahlderverbleibendenversuche")?;
+                        pos.anzahl_verbleibende_versuche = text.parse::<u64>().ok();
+                        Ok(())
+                    }
+                    _ => skip_element(pr),
+                })?;
+            }
+            Ok(())
+        }
         other => Err(pr.error(&format!("unexpected element <{other}> in auskunft.antwort"))),
     })?;
     if !have_ergebnis {

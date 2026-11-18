@@ -90,6 +90,8 @@ fn rueckweisung_classifies_rejected_with_grund() {
         antwort.classify().text(),
         "Das Suchprofil dieser Einzelanfrage ist ungültig oder wird nicht unterstützt."
     );
+    // Wiederholanfrage steering rides on the position.
+    assert_eq!(antwort.positionen[0].anzahl_verbleibende_versuche, Some(2));
 }
 
 #[test]
