@@ -1,6 +1,18 @@
 # Changelog
 
-## Unreleased — phase 3
+## Unreleased — phase 3 (XTA envelope)
+
+- `rmeld create` emits the transport file in the de-facto envelope
+  convention: `<XTA>` root around the fachlich message. `--betreff`
+  carries the free OSCI Subject string, empty by default. `validate`
+  and `parse` (and thus `check`) see through the envelope — the XSD
+  gate keeps proving the fachlich message inside. The library keeps
+  `to_xml()` (bare) alongside `to_xta(betreff)`.
+- Decision grounded in research: no normative schema for the container
+  exists (docs/STANDARD-NOTES.md §7); the inner layout is deliberately
+  minimal pending the intermediary handbook.
+
+## Unreleased — phase 3 (Wiederholanfrage)
 
 - `create` supports **Wiederholanfragen**: `wiederholanfrage` in the
   JSON references a previous order (`auftragsnummer.alteanfrage` /

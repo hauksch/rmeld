@@ -210,3 +210,41 @@ fn broken_structure_is_malformed_not_panic() {
 // Silence unused-import lint for the type-only imports above.
 #[allow(unused_imports)]
 use rmeld::{Antwort as _, AuskunftPosition as _, PositionErgebnis as _, Rts as _};
+
+#[test]
+fn wrapped_answer_parses_and_classifies_through_the_envelope() {
+    let inner = fixture("antwort-0601-positiv.xml");
+    let wrapped = format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<XTA betreff=\"\">\n{}\n</XTA>\n",
+        String::from_utf8(inner.clone()).expect("fixture is utf-8")
+    );
+    // The XSD gate sees through the envelope.
+    rmeld::validate(wrapped.as_bytes())
+        .expect("wrapped answer must validate (envelope transparent)");
+    let Message::Antwort0601(antwort) = Message::parse(wrapped.as_bytes()).expect("parse") else {
+        panic!("expected 0601");
+    };
+    let Classification::Fulfilled(e) = antwort.classify() else {
+        panic!("expected Fulfilled through the envelope");
+    };
+    assert_eq!(e.ergebnisstatus, "01");
+    assert_eq!(e.zusatzinformationen, vec!["01"]);
+    assert_eq!(
+        e.namen.and_then(|n| n.familienname),
+        Some("Müller-Lüdenscheidt".to_string())
+    );
+}
+
+#[test]
+fn empty_and_unknown_envelopes_fail_loudly() {
+    let empty = b"<?xml version=\"1.0\"?><XTA betreff=\"\"></XTA>";
+    let err = Message::parse(empty).expect_err("empty envelope must fail");
+    assert!(err.to_string().contains("no message content"), "got {err}");
+
+    let unknown_inner = b"<?xml version=\"1.0\"?><XTA><fremd.nachricht xmlns=\"http://www.osci.de/xmeld2611\"/></XTA>";
+    let err = Message::parse(unknown_inner).expect_err("unknown inner root must fail");
+    assert!(
+        matches!(err, rmeld::Error::UnknownMessage { .. }),
+        "got {err}"
+    );
+}

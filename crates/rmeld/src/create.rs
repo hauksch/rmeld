@@ -506,7 +506,8 @@ impl Anfrage {
         Ok(Anfrage { attribute, input })
     }
 
-    /// Serialize to xMeld XML (UTF-8, declaration, indented).
+    /// Serialize to xMeld XML (UTF-8, declaration, indented) — the bare
+    /// fachlich message, no transport envelope.
     pub fn to_xml(&self) -> Result<String, Error> {
         let mut buf = Vec::with_capacity(2048);
         let mut writer = Writer::new_with_indent(&mut buf, b' ', 2);
@@ -515,7 +516,37 @@ impl Anfrage {
             Some("UTF-8"),
             None,
         )))?;
+        self.write_message_events(&mut writer)?;
+        String::from_utf8(buf).map_err(|e| Error::Xml(format!("non-UTF-8 output: {e}")))
+    }
 
+    /// Serialize as the XTA transport file the pipeline hands over: the
+    /// convention-following `<XTA>` envelope (the root element rosci and
+    /// the file-drop adapters expect) around the fachlich message, with
+    /// the Betreff as an attribute of the envelope root.
+    ///
+    /// There is no normative schema for this container (see
+    /// docs/STANDARD-NOTES.md §7) — the layout is deliberately minimal:
+    /// one root, one message child, one attribute. `betreff` is the free
+    /// OSCI Subject string; `None` serializes as an empty attribute.
+    pub fn to_xta(&self, betreff: Option<&str>) -> Result<String, Error> {
+        // Decl-less body: an XML declaration inside element content would
+        // be invalid.
+        let mut buf = Vec::with_capacity(2048);
+        let mut writer = Writer::new_with_indent(&mut buf, b' ', 2);
+        self.write_message_events(&mut writer)?;
+        let inner =
+            String::from_utf8(buf).map_err(|e| Error::Xml(format!("non-UTF-8 output: {e}")))?;
+        let escaped = quick_xml::escape::escape(betreff.unwrap_or(""));
+        Ok(format!(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<XTA betreff=\"{escaped}\">\n{inner}\n</XTA>\n"
+        ))
+    }
+
+    /// Write the bare fachlich message events (root Start..End, no XML
+    /// declaration) into an existing writer — the shared body of
+    /// [`Self::to_xml`] and any future envelope writer.
+    fn write_message_events(&self, writer: &mut Writer<&mut Vec<u8>>) -> Result<(), Error> {
         let mut root = q("melderegisterauskunfteinfach.anforderung.0600");
         root.push_attribute(("xmlns", NS_XMELD_2611));
         self.attribute.push_to(&mut root);
@@ -527,20 +558,16 @@ impl Anfrage {
         writer.write_event(Event::Start(q("nachrichtenkopf")))?;
         writer.write_event(Event::Start(q("identifikation.nachricht")))?;
         {
-            write_code_element(&mut writer, q("nachrichtennummer"), "0600")?;
-            write_text_element(
-                &mut writer,
-                q("erstellungszeitpunkt"),
-                &self.ereigniszeitpunkt(),
-            )?;
-            write_text_element(&mut writer, q("tagesvorgangszaehler"), "1")?;
+            write_code_element(writer, q("nachrichtennummer"), "0600")?;
+            write_text_element(writer, q("erstellungszeitpunkt"), &self.ereigniszeitpunkt())?;
+            write_text_element(writer, q("tagesvorgangszaehler"), "1")?;
         }
         writer.write_event(Event::End(BytesEnd::new("identifikation.nachricht")))?;
         writer.write_event(Event::Start(q("absender")))?;
         {
             writer.write_event(Event::Start(q("kunde.bezeichnung")))?;
             writer.write_event(Event::Start(q("NAMEJURISTISCHEPERSON")))?;
-            write_text_element(&mut writer, q("name"), &self.input.absender_bezeichnung)?;
+            write_text_element(writer, q("name"), &self.input.absender_bezeichnung)?;
             writer.write_event(Event::End(BytesEnd::new("NAMEJURISTISCHEPERSON")))?;
             writer.write_event(Event::End(BytesEnd::new("kunde.bezeichnung")))?;
         }
@@ -548,7 +575,7 @@ impl Anfrage {
         writer.write_event(Event::Start(q("empfaenger")))?;
         {
             write_text_element(
-                &mut writer,
+                writer,
                 q("behoerdenkennung"),
                 &self.input.empfaenger_behoerdenkennung,
             )?;
@@ -556,11 +583,7 @@ impl Anfrage {
         writer.write_event(Event::End(BytesEnd::new("empfaenger")))?;
         writer.write_event(Event::End(BytesEnd::new("nachrichtenkopf")))?;
 
-        write_text_element(
-            &mut writer,
-            q("zeichennachricht"),
-            &self.input.zeichennachricht,
-        )?;
+        write_text_element(writer, q("zeichennachricht"), &self.input.zeichennachricht)?;
 
         for (position, einzel) in self.input.anfragen.iter().enumerate() {
             let position = position + 1;
@@ -578,27 +601,19 @@ impl Anfrage {
                 for code in &zweck.codes {
                     let mut wrapper = q("code");
                     wrapper.push_attribute(("listVersionID", gewerblicher_zweck_version()));
-                    write_code_element(&mut writer, wrapper, code)?;
+                    write_code_element(writer, wrapper, code)?;
                 }
                 if let Some(freitext) = &zweck.freitext {
-                    write_text_element(&mut writer, q("freitext"), freitext)?;
+                    write_text_element(writer, q("freitext"), freitext)?;
                 }
                 writer.write_event(Event::End(BytesEnd::new("angabeDesZwecks")))?;
-                write_text_element(
-                    &mut writer,
-                    q("geschaeftszeichen"),
-                    &zweck.geschaeftszeichen,
-                )?;
+                write_text_element(writer, q("geschaeftszeichen"), &zweck.geschaeftszeichen)?;
                 writer.write_event(Event::End(BytesEnd::new("gewerblicherZweck")))?;
             }
             if let Some(z) = &einzel.zeicheneinzelfall {
-                write_text_element(&mut writer, q("zeicheneinzelfall"), z)?;
+                write_text_element(writer, q("zeicheneinzelfall"), z)?;
             }
-            write_text_element(
-                &mut writer,
-                q("zumZweckDerWerbungOderAdresshandel"),
-                "false",
-            )?;
+            write_text_element(writer, q("zumZweckDerWerbungOderAdresshandel"), "false")?;
             writer.write_event(Event::End(BytesEnd::new("anfragedaten")))?;
 
             // datenZurAnfrage — the full Suchprofil, in schema sequence
@@ -609,10 +624,10 @@ impl Anfrage {
             writer.write_event(Event::Start(q("name")))?;
             {
                 writer.write_event(Event::Start(q("nachname")))?;
-                write_allgemeiner_name(&mut writer, &einzel.nachname)?;
+                write_allgemeiner_name(writer, &einzel.nachname)?;
                 writer.write_event(Event::End(BytesEnd::new("nachname")))?;
                 writer.write_event(Event::Start(q("vornamen")))?;
-                write_allgemeiner_name(&mut writer, &einzel.vornamen)?;
+                write_allgemeiner_name(writer, &einzel.vornamen)?;
                 writer.write_event(Event::End(BytesEnd::new("vornamen")))?;
             }
             writer.write_event(Event::End(BytesEnd::new("name")))?;
@@ -623,23 +638,23 @@ impl Anfrage {
                     if let Some(ags) = &anschrift.ags {
                         let mut gs = u("gemeindeschluessel");
                         gs.push_attribute(("listVersionID", gemeindeverzeichnis_version()));
-                        write_code_element(&mut writer, gs, ags)?;
+                        write_code_element(writer, gs, ags)?;
                     }
                     if let Some(hn) = &anschrift.hausnummer {
-                        write_text_element(&mut writer, u("hausnummer"), hn)?;
+                        write_text_element(writer, u("hausnummer"), hn)?;
                     }
-                    write_text_element(&mut writer, u("postleitzahl"), &anschrift.postleitzahl)?;
-                    write_text_element(&mut writer, u("strasse"), &anschrift.strasse)?;
-                    write_text_element(&mut writer, u("wohnort"), &anschrift.wohnort)?;
+                    write_text_element(writer, u("postleitzahl"), &anschrift.postleitzahl)?;
+                    write_text_element(writer, u("strasse"), &anschrift.strasse)?;
+                    write_text_element(writer, u("wohnort"), &anschrift.wohnort)?;
                 }
                 writer.write_event(Event::End(BytesEnd::new("anschrift")))?;
             }
 
             if let Some(o) = &einzel.ordensname {
-                write_text_element(&mut writer, q("ordensname"), o)?;
+                write_text_element(writer, q("ordensname"), o)?;
             }
             if let Some(k) = &einzel.kuenstlername {
-                write_text_element(&mut writer, q("kuenstlername"), k)?;
+                write_text_element(writer, q("kuenstlername"), k)?;
             }
 
             if let Some(geb) = &einzel.geburtsdatum {
@@ -649,18 +664,18 @@ impl Anfrage {
                 writer.write_event(Event::Start(q("geburtsdatum")))?;
                 if geb.is_unbekannt() {
                     // fixed="true" boolean, unqualified (xida type).
-                    write_text_element(&mut writer, u("unbekannt"), "true")?;
+                    write_text_element(writer, u("unbekannt"), "true")?;
                 } else {
                     writer.write_event(Event::Start(u("teilbekanntesDatum")))?;
                     let inner = u(geb.granularity.element_name());
-                    write_text_element(&mut writer, inner, &geb.value)?;
+                    write_text_element(writer, inner, &geb.value)?;
                     writer.write_event(Event::End(BytesEnd::new("teilbekanntesDatum")))?;
                 }
                 writer.write_event(Event::End(BytesEnd::new("geburtsdatum")))?;
             }
 
             if let Some(ort) = &einzel.geburtsort {
-                write_ort_mit_staat(&mut writer, "geburtsortUndStaat", "geburtsort", ort)?;
+                write_ort_mit_staat(writer, "geburtsortUndStaat", "geburtsort", ort)?;
             }
 
             if let Some(gof) = &einzel.geschlecht_oder_familienstand {
@@ -669,10 +684,10 @@ impl Anfrage {
                     GeschlechtOderFamilienstand::Geschlecht(code) => {
                         let mut wrapper = q("geschlecht");
                         wrapper.push_attribute(("listVersionID", geschlecht_version()));
-                        write_code_element(&mut writer, wrapper, code)?;
+                        write_code_element(writer, wrapper, code)?;
                     }
                     GeschlechtOderFamilienstand::Familienstand(code) => {
-                        write_code_element(&mut writer, q("familienstand"), code)?;
+                        write_code_element(writer, q("familienstand"), code)?;
                     }
                 }
                 writer.write_event(Event::End(BytesEnd::new("geschlechtOderFamilienstand")))?;
@@ -688,28 +703,28 @@ impl Anfrage {
                         writer.write_event(Event::Start(q("nameNatuerlichePerson")))?;
                         writer.write_event(Event::Start(q("familienname.unstrukturiert")))?;
                         writer.write_event(Event::Start(q("nachname")))?;
-                        write_allgemeiner_name(&mut writer, familienname)?;
+                        write_allgemeiner_name(writer, familienname)?;
                         writer.write_event(Event::End(BytesEnd::new("nachname")))?;
                         writer.write_event(Event::End(BytesEnd::new(
                             "familienname.unstrukturiert",
                         )))?;
                         writer.write_event(Event::Start(q("vornamen")))?;
-                        write_allgemeiner_name(&mut writer, vornamen)?;
+                        write_allgemeiner_name(writer, vornamen)?;
                         writer.write_event(Event::End(BytesEnd::new("vornamen")))?;
                         writer.write_event(Event::End(BytesEnd::new("nameNatuerlichePerson")))?;
                     }
                     GesetzlicherVertreter::Juristisch(name) => {
-                        write_text_element(&mut writer, q("nameJuristischePerson"), name)?;
+                        write_text_element(writer, q("nameJuristischePerson"), name)?;
                     }
                 }
                 writer.write_event(Event::End(BytesEnd::new("gesetzlicherVertreter.name")))?;
             }
 
             if let Some(d) = &einzel.einzugsdatum {
-                write_text_element(&mut writer, q("einzugsdatum"), d.as_str())?;
+                write_text_element(writer, q("einzugsdatum"), d.as_str())?;
             }
             if let Some(d) = &einzel.auszugsdatum {
-                write_text_element(&mut writer, q("auszugsdatum"), d.as_str())?;
+                write_text_element(writer, q("auszugsdatum"), d.as_str())?;
             }
 
             if let Some(beginn) = &einzel.familienstand_beginn {
@@ -719,16 +734,16 @@ impl Anfrage {
                 // re-declares it); only its xida children are unqualified.
                 writer.write_event(Event::Start(q("datumBeginn")))?;
                 let inner = u(beginn.datum.granularity.element_name());
-                write_text_element(&mut writer, inner, &beginn.datum.value)?;
+                write_text_element(writer, inner, &beginn.datum.value)?;
                 writer.write_event(Event::End(BytesEnd::new("datumBeginn")))?;
-                write_text_element(&mut writer, q("ort.letzte.ehe.oder.lp"), &beginn.ort)?;
+                write_text_element(writer, q("ort.letzte.ehe.oder.lp"), &beginn.ort)?;
                 if let Some(staat) = &beginn.staat_code {
                     let mut wrapper = q("ortstaat.letzte.ehe.oder.lp");
                     wrapper.push_attribute(("listVersionID", gebiet_version()));
-                    write_code_element(&mut writer, wrapper, staat)?;
+                    write_code_element(writer, wrapper, staat)?;
                 }
                 if let Some(d) = &beginn.datum_vorausgegangene_lp {
-                    write_text_element(&mut writer, q("datumBeginnVorausgegangeneLP"), d.as_str())?;
+                    write_text_element(writer, q("datumBeginnVorausgegangeneLP"), d.as_str())?;
                 }
                 writer.write_event(Event::End(BytesEnd::new("familienstandBeginnUndOrt")))?;
             }
@@ -738,22 +753,22 @@ impl Anfrage {
                 if let Some(f) = &p.familienname {
                     writer.write_event(Event::Start(q("familienname.unstrukturiert")))?;
                     writer.write_event(Event::Start(q("nachname")))?;
-                    write_allgemeiner_name(&mut writer, f)?;
+                    write_allgemeiner_name(writer, f)?;
                     writer.write_event(Event::End(BytesEnd::new("nachname")))?;
                     writer.write_event(Event::End(BytesEnd::new("familienname.unstrukturiert")))?;
                 }
                 if let Some(g) = &p.geburtsname {
                     writer.write_event(Event::Start(q("geburtsname.unstrukturiert")))?;
-                    write_allgemeiner_name(&mut writer, g)?;
+                    write_allgemeiner_name(writer, g)?;
                     writer.write_event(Event::End(BytesEnd::new("geburtsname.unstrukturiert")))?;
                 }
                 if let Some(v) = &p.vornamen {
                     writer.write_event(Event::Start(q("vornamen")))?;
-                    write_allgemeiner_name(&mut writer, v)?;
+                    write_allgemeiner_name(writer, v)?;
                     writer.write_event(Event::End(BytesEnd::new("vornamen")))?;
                 }
                 if let Some(d) = &p.doktorgrad {
-                    write_text_element(&mut writer, q("doktorgrad"), d)?;
+                    write_text_element(writer, q("doktorgrad"), d)?;
                 }
                 writer.write_event(Event::End(BytesEnd::new("partner.name")))?;
             }
@@ -761,12 +776,12 @@ impl Anfrage {
             if let Some(d) = &einzel.sterbetag {
                 // type.Sterbetag = wrapper element + inner sterbetag date.
                 writer.write_event(Event::Start(q("sterbetag")))?;
-                write_text_element(&mut writer, q("sterbetag"), d.as_str())?;
+                write_text_element(writer, q("sterbetag"), d.as_str())?;
                 writer.write_event(Event::End(BytesEnd::new("sterbetag")))?;
             }
 
             if let Some(ort) = &einzel.sterbeort {
-                write_ort_mit_staat(&mut writer, "sterbeortUndStaat", "sterbeort", ort)?;
+                write_ort_mit_staat(writer, "sterbeortUndStaat", "sterbeort", ort)?;
             }
 
             writer.write_event(Event::End(BytesEnd::new("datenZurAnfrage")))?;
@@ -779,42 +794,34 @@ impl Anfrage {
             {
                 writer.write_event(Event::Start(q("steuerungsinformationen")))?;
                 for option in &einzel.option_auskunft {
-                    write_code_element(&mut writer, q("option.auskunft"), option)?;
+                    write_code_element(writer, q("option.auskunft"), option)?;
                 }
                 if let Some(w) = &einzel.wiederholanfrage {
                     writer.write_event(Event::Start(q("wiederholanfrage")))?;
                     if let Some(n) = &w.auftragsnummer_alteanfrage {
-                        write_text_element(&mut writer, q("auftragsnummer.alteanfrage"), n)?;
+                        write_text_element(writer, q("auftragsnummer.alteanfrage"), n)?;
                     }
                     if let Some(p) = &w.auftragspositionsnummer_alteanfrage {
-                        write_text_element(
-                            &mut writer,
-                            q("auftragspositionsnummer.alteanfrage"),
-                            p,
-                        )?;
+                        write_text_element(writer, q("auftragspositionsnummer.alteanfrage"), p)?;
                     }
                     writer.write_event(Event::End(BytesEnd::new("wiederholanfrage")))?;
                 }
                 if einzel.verzicht_auf_mitteilung {
-                    write_text_element(&mut writer, q("verzichtAufMitteilung"), "true")?;
+                    write_text_element(writer, q("verzichtAufMitteilung"), "true")?;
                 }
                 writer.write_event(Event::End(BytesEnd::new("steuerungsinformationen")))?;
             }
 
             writer.write_event(Event::Start(q("technische.einzelidentifikation")))?;
             {
-                write_text_element(
-                    &mut writer,
-                    q("ereigniszeitpunkt"),
-                    &self.ereigniszeitpunkt(),
-                )?;
+                write_text_element(writer, q("ereigniszeitpunkt"), &self.ereigniszeitpunkt())?;
                 // Mandatory on the wire; deterministic fallback so the
                 // caller does not have to invent IDs for trivial flows.
                 let zeichen = einzel
                     .zeicheneinzelfall
                     .clone()
                     .unwrap_or_else(|| format!("{}-{position}", self.input.zeichennachricht));
-                write_text_element(&mut writer, q("zeicheneinzelfall"), &zeichen)?;
+                write_text_element(writer, q("zeicheneinzelfall"), &zeichen)?;
             }
             writer.write_event(Event::End(BytesEnd::new("technische.einzelidentifikation")))?;
             writer.write_event(Event::End(BytesEnd::new("auskunft.anforderung")))?;
@@ -823,8 +830,7 @@ impl Anfrage {
         writer.write_event(Event::End(BytesEnd::new(
             "melderegisterauskunfteinfach.anforderung.0600",
         )))?;
-
-        String::from_utf8(buf).map_err(|e| Error::Xml(format!("non-UTF-8 output: {e}")))
+        Ok(())
     }
 
     fn ereigniszeitpunkt(&self) -> String {

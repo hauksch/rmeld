@@ -34,46 +34,68 @@ pub enum Message {
 impl Message {
     /// Parse a byte-exact xMeld message. The root namespace must be one of
     /// the known release namespaces; the root element decides the variant.
+    /// An `<XTA>` envelope root (the transport-file convention, any
+    /// namespace, case-insensitive like rosci's sniff) is transparent:
+    /// parsing descends to the first element inside it.
     pub fn parse(bytes: &[u8]) -> Result<Message, Error> {
         let mut reader = NsReader::from_reader(bytes);
         reader.config_mut().trim_text(true);
+        let mut in_envelope = false;
         loop {
-            let (ns, event) = reader
+            let (resolved, event) = reader
                 .read_resolved_event()
                 .map_err(|e| Error::Malformed(format!("xml error: {e}")))?;
+            let ns: String = match &resolved {
+                ResolveResult::Bound(uri) => std::str::from_utf8(uri.as_ref())
+                    .map_err(|e| Error::Malformed(format!("namespace not UTF-8: {e}")))?
+                    .to_string(),
+                ResolveResult::Unbound => String::new(),
+                ResolveResult::Unknown(prefix) => {
+                    return Err(Error::Malformed(format!(
+                        "unknown namespace prefix binding: {prefix:?}"
+                    )));
+                }
+            };
             match event {
                 Event::Start(start) => {
                     let root = local_name(&start);
-                    let ns = bound_namespace(&ns)?;
-                    assert_known_namespace(ns, &root)?;
-                    match root.as_str() {
-                        "melderegisterauskunfteinfach.anforderung.0600" => {
-                            return AnfrageEcho::from_reader(&mut reader, root)
-                                .map(Message::Anfrage0600);
-                        }
-                        "melderegisterauskunfteinfach.antwort.0601" => {
-                            return Antwort::from_reader(&mut reader, root)
-                                .map(Message::Antwort0601);
-                        }
-                        "administration.returntosender.0900"
-                        | "administration.returntosender.0910" => {
-                            return Rts::from_reader(&mut reader, root)
-                                .map(Message::ReturnToSender);
-                        }
-                        other => {
-                            let namespace = ns.to_string();
-                            return Err(Error::UnknownMessage {
-                                root: other.to_string(),
-                                namespace,
-                            });
-                        }
+                    if in_envelope {
+                        // First element inside the envelope: the message.
+                        assert_known_namespace(&ns, &root)?;
+                        return dispatch_root(&mut reader, root, ns);
                     }
+                    if root.eq_ignore_ascii_case("XTA") {
+                        in_envelope = true;
+                        continue;
+                    }
+                    assert_known_namespace(&ns, &root)?;
+                    return dispatch_root(&mut reader, root, ns);
                 }
                 Event::Empty(start) => {
-                    // A self-closing root carries no fachlich content.
                     let root = local_name(&start);
-                    let ns = bound_namespace(&ns)?;
-                    assert_known_namespace(ns, &root)?;
+                    if in_envelope {
+                        // The envelope's only child is self-closing: no
+                        // fachlich content — but the name still decides
+                        // between "known but empty" and "unknown".
+                        assert_known_namespace(&ns, &root)?;
+                        if matches!(
+                            root.as_str(),
+                            "melderegisterauskunfteinfach.anforderung.0600"
+                                | "melderegisterauskunfteinfach.antwort.0601"
+                                | "administration.returntosender.0900"
+                                | "administration.returntosender.0910"
+                        ) {
+                            return Err(Error::Malformed(
+                                "XTA envelope contains no message content".to_string(),
+                            ));
+                        }
+                        return Err(Error::UnknownMessage {
+                            root,
+                            namespace: ns,
+                        });
+                    }
+                    // A self-closing root carries no fachlich content.
+                    assert_known_namespace(&ns, &root)?;
                     match root.as_str() {
                         "melderegisterauskunfteinfach.anforderung.0600"
                         | "melderegisterauskunfteinfach.antwort.0601"
@@ -86,12 +108,17 @@ impl Message {
                         other => {
                             return Err(Error::UnknownMessage {
                                 root: other.to_string(),
-                                namespace: ns.to_string(),
+                                namespace: ns.clone(),
                             });
                         }
                     }
                 }
                 Event::Eof => {
+                    if in_envelope {
+                        return Err(Error::Malformed(
+                            "XTA envelope contains no message content".to_string(),
+                        ));
+                    }
                     return Err(Error::Malformed("no root element found".to_string()));
                 }
                 _ => {}
@@ -108,6 +135,31 @@ fn assert_known_namespace(ns: &str, root: &str) -> Result<(), Error> {
             root: root.to_string(),
             namespace: ns.to_string(),
         })
+    }
+}
+
+/// Positioned right after the message root's Start was consumed (its name
+/// already checked against the known namespaces): dispatch to the variant
+/// parser.
+fn dispatch_root(
+    reader: &mut NsReader<&[u8]>,
+    root: String,
+    namespace: String,
+) -> Result<Message, Error> {
+    match root.as_str() {
+        "melderegisterauskunfteinfach.anforderung.0600" => {
+            AnfrageEcho::from_reader(reader, root).map(Message::Anfrage0600)
+        }
+        "melderegisterauskunfteinfach.antwort.0601" => {
+            Antwort::from_reader(reader, root).map(Message::Antwort0601)
+        }
+        "administration.returntosender.0900" | "administration.returntosender.0910" => {
+            Rts::from_reader(reader, root).map(Message::ReturnToSender)
+        }
+        other => Err(Error::UnknownMessage {
+            root: other.to_string(),
+            namespace,
+        }),
     }
 }
 
@@ -274,19 +326,6 @@ struct PathReader<'a, 'b> {
 
 fn local_name(start: &BytesStart<'_>) -> String {
     String::from_utf8_lossy(start.local_name().as_ref()).into_owned()
-}
-
-fn bound_namespace<'a>(ns: &'a ResolveResult) -> Result<&'a str, Error> {
-    match ns {
-        ResolveResult::Bound(uri) => Ok(std::str::from_utf8(uri.as_ref())
-            .map_err(|e| Error::Malformed(format!("namespace not UTF-8: {e}")))?),
-        ResolveResult::Unbound => Err(Error::Malformed(
-            "root element must be namespace-qualified".to_string(),
-        )),
-        ResolveResult::Unknown(prefix) => Err(Error::Malformed(format!(
-            "unknown namespace prefix binding: {prefix:?}"
-        ))),
-    }
 }
 
 impl<'a, 'b> PathReader<'a, 'b> {

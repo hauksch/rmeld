@@ -58,8 +58,10 @@ without it, by design), no network.
 ## Usage
 
 ```shell
-# Build a 0600 request from structured JSON, XSD-proven:
+# Build a 0600 request from structured JSON, XSD-proven, wrapped in the
+# <XTA> transport envelope (rosci-ready):
 rmeld create anfrage.json > meldung.xta
+rmeld create anfrage.json --betreff "XMeld 26.11 Melderegisterauskunft" > meldung.xta
 
 # Read a 0601 answer (or RTS 0900/0910): verdict on stdout, exit code carries it
 rmeld check antwort.xml

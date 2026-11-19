@@ -266,6 +266,28 @@ strings, and none defines them.
 So the two strings remain genuinely intermediary-specific, and the
 search space is exhausted: the standards cannot provide them.
 
+**Decision implemented (phase 3, after the research):** rmeld follows
+the de-facto convention as far as it is observable — `rmeld create`
+emits the transport file with the `<XTA>` envelope root (the element
+rosci and the file-drop adapters expect) around the fachlich message,
+and carries the Betreff as an attribute of that root:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<XTA betreff="">
+  <melderegisterauskunfteinfach.anforderung.0600 ...>
+```
+
+`--betreff` takes the free OSCI Subject string and **defaults to
+empty** — a contract-pending slot, never a fabricated value. The inner
+layout is deliberately minimal (one root, one message child, one
+attribute) so nothing can conflict with the intermediary's real
+handbook; when that handbook arrives, only `to_xta` and this section
+change. The rest of the pipeline is envelope-transparent: `validate`
+and `parse` see through `<XTA>` (case-insensitive, any namespace, like
+rosci's sniff) to the fachlich message and gate it against the official
+XSDs; the library's `to_xml()` still emits the bare message.
+
 ## 8. What rests on assumptions (honest list)
 
 1. **Which release the intermediary actually runs** — unverifiable
