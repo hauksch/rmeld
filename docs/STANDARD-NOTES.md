@@ -315,6 +315,18 @@ XSDs; the library's `to_xml()` still emits the bare message.
    Related but standard-adjacent: which MessageMetaData
    BusinessScenario/MessageType values the intermediary expects on the
    routing side — rosci-side configuration, not rmeld's.
+   Also affects `empfaenger_behoerdenkennung`: DVDV access is restricted
+   to participants of the öffentlichen Verwaltung (Behörden, ≥ 50 %
+   public-owned companies etc., per the DVDV Nutzungsvoraussetzungen) —
+   a private actor requesting in its own name is not an eligible DVDV
+   participant. The realistic topology for gewerbliche
+   Melderegisterauskünfte is a broker (Vermittlungsdienst — e.g. ZEMA
+   online/AKDB, pmZEMA/govconnect, or an XMeld intermediary) that holds
+   the DVDV/OSCI connectivity itself, contracts with the Massenanfrager,
+   and routes on the AGS in the Suchprofil. In that topology the
+   Behördenkennung comes from the broker's onboarding documentation
+   (constant gateway value or per-Behörde mapping), not from a DVDV
+   lookup — one more item for the same contract conversation.
 6. **CI has not run yet** — no git remote is configured, so the
    workflows (fmt/clippy/test/cargo-deny on GitHub runners with libxml2
    2.15) are exercised locally only. Push to GitHub to arm them.
