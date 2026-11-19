@@ -233,6 +233,39 @@ differs from `<XTA>`, the envelope root — both go on the
 intermediary-contract list in §8. If a contract document ever lands,
 `create` growing an `--xta` wrapper is a contained phase-3 change.
 
+**Phase-3 web research (2026-11-19), closing the question:** every
+normative document in the family was checked for the two contract
+strings, and none defines them.
+
+- **Betreff**: normatively the optional OSCI 1.2 `Subject` header
+  element (inside `storeDelivery`/`mediateDelivery`, xsd:string,
+  „Betreff einer Zustellung“, OSCI-1.2-Spezifikation §storeDelivery;
+  also `order.xsd` in the vendored OSCI schemas). Its *content* is a
+  free string — the spec's own examples say „Betreff der Zustellung“,
+  the 2026 MessageMetaData-Ergänzung ships „Subject0“. Checked and
+  empty: OSCI-1.2 spec, XTA 2 V5.1.1 spec, XMeld 3.4 spec (its only
+  `betreff` element is RTS message content), XMeld 26.11 Verbindliche
+  Handlungsanweisung (fachlich only). The „XTA 2.4 Anzeige“-style
+  examples circulating in practice are per-intermediary handbook
+  conventions.
+- **Envelope root**: the XTA lineage is Webservice-only (XTA-WS 1.1.1 →
+  XTA 2), and the official KoSIT „XML-Beispiele für MessageMetaData“
+  root at `<MessageMetaData>` — a Transportauftrag metadata object that
+  per the 2026 Ergänzung hangs into the OSCI SOAP header via a
+  `##other` wildcard in namespace
+  `http://www.osci.eu/ws/2014/10/transport` (rosci's vendored schemas
+  already reserve exactly that namespace for it). No normative `<XTA>`
+  file container exists anywhere in the standards; it is an
+  implementation convention of XTA/OSCI server file-drop adapters.
+  Practical consequence for the contract talk: the routing information
+  intermediaries actually act on lives in MessageMetaData fields
+  (`Qualifier/Service/BusinessScenario`, `MessageType`,
+  `Reader/Directory`) — DVDV-driven, not Betreff-driven — which rosci
+  already transports.
+
+So the two strings remain genuinely intermediary-specific, and the
+search space is exhausted: the standards cannot provide them.
+
 ## 8. What rests on assumptions (honest list)
 
 1. **Which release the intermediary actually runs** — unverifiable
@@ -252,10 +285,14 @@ intermediary-contract list in §8. If a contract document ever lands,
    authoritative list of what counts as a valid second/third criterion is
    Schematron-level (the XSD cannot express it). rmeld accepts a
    conservative superset; a Behörde-side rejection arrives as grund 08.
-5. **Intermediary contract items** (cannot be derived from any standard,
-   per §7): the Betreff convention and, if it differs from `<XTA>`, the
-   envelope root element. Needed verbatim from the intermediary before
-   first live send.
+5. **Intermediary contract items** (cannot be derived from any standard —
+   see §7 for the exhausted search): the **Betreff** content convention
+   (normatively the free OSCI 1.2 `Subject` header element) and, if it
+   differs from `<XTA>`, the **envelope root element** of the handed-over
+   file. Needed verbatim from the intermediary before first live send.
+   Related but standard-adjacent: which MessageMetaData
+   BusinessScenario/MessageType values the intermediary expects on the
+   routing side — rosci-side configuration, not rmeld's.
 6. **CI has not run yet** — no git remote is configured, so the
    workflows (fmt/clippy/test/cargo-deny on GitHub runners with libxml2
    2.15) are exercised locally only. Push to GitHub to arm them.
@@ -271,4 +308,9 @@ intermediary-contract list in §8. If a contract document ever lands,
 - DIN 91379 datatypes (vendored): https://xoev.de/schemata/din/91379/2022-08/din-norm-91379-datatypes.xsd
 - OSCI-XMeld 3.4 specification (message inventory, PDF): https://www.xrepository.de/details/urn:xoev-de:kosit:standard:xinneres.xmeld_3.4
 - XTA 2 standard (§7 verdict): https://www.xrepository.de/details/urn:xoev-de:kosit:standard:xta2 — current release Version 5.1.1 (`urn:…:xta2_5.1.1`, spec PDF 26.07.2024, bundle incl. WSDL + schemas + catalog)
+- KoSIT „XML-Beispiele für MessageMetaData“ (root = `<MessageMetaData>`): https://www.xoev.de/osci-xta/standard-xta-2/xta-hilfsmittel/xml-beispiele-fuer-messagemetadata-23198
+- OSCI 1.2 Spezifikation (Subject = „Betreff einer Zustellung“, free string): https://www.xoev.de/osci-xta/standard-osci-transport-1-2/osci-versionsuebersicht-23217
+- Ergänzung „Übertragung von XTA2 MessageMetaData“ (2026, MMD in the OSCI SOAP header `##other`): https://www.xoev.de/sixcms/media.php/13/Erg%C3%A4nzung_zur_OSCI-MessageMetaData.pdf
+- XMeld 26.11 Verbindliche Handlungsanweisung (fachlich only, no transport conventions): https://www1.osci.de/sixcms/media.php/13/2026-11-11_Handlungsanweisung_26.11-final.pdf
+- XBasisdaten Anlage 2 (XTA-WS method mapping for register-like queries: sendMessageSync / request-response): https://www.xrepository.de/api/xrepository/urn:xoev-de:bva:standard:xbasisdaten:dokumentation:Anlage_2_Transportspezifische_Anforderungen_an_eine_sichere_Daten_bermittlung_mit_XBasisdaten
 - XTA 2 gewerblicher-Zweck/geschlecht code lists: XRepository genericode endpoints, e.g. `https://www.xrepository.de/api/xrepository/urn:de:xmeld:schluesseltabelle:melderegisterauskunft.gewerblicher.zweck_1/dokumente` and `urn:xoev-de:xinneres:codeliste:geschlecht`
