@@ -439,3 +439,49 @@ fn wiederholanfrage_without_any_reference_fails_fast() {
     assert!(matches!(err, rmeld::Error::InvalidRequest(_)), "got {err}");
     assert!(err.to_string().contains("wiederholanfrage"), "got {err}");
 }
+
+// ─── XTA envelope ───────────────────────────────────────────────────────
+
+#[test]
+fn xta_envelope_wraps_validates_and_round_trips() {
+    let anfrage = Anfrage::build(base_input()).expect("valid");
+    let xta = anfrage
+        .to_xta(Some("XMeld 26.11 Melderegisterauskunft"))
+        .expect("serialize");
+    // The gate sees through the envelope to the fachlich message.
+    rmeld::validate(xta.as_bytes())
+        .expect("the message inside the envelope must pass the official XSD");
+    // Parse sees through it too.
+    let Message::Anfrage0600(parsed) = Message::parse(xta.as_bytes()).expect("re-parse") else {
+        panic!("expected 0600 echo");
+    };
+    assert_eq!(parsed.zeichennachricht.as_deref(), Some("V-2026-4711"));
+    assert_eq!(
+        parsed.einzelfaelle[0].nachname.as_deref(),
+        Some("Müller-Lüdenscheidt")
+    );
+    // Convention: root element <XTA>, betreff attribute on it.
+    assert!(xta.starts_with("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<XTA betreff=\"XMeld 26.11 Melderegisterauskunft\">"));
+    assert!(xta.trim_end().ends_with("</XTA>"));
+    // Exactly one fachlich message inside — no nested declaration.
+    assert_eq!(xta.matches("<?xml").count(), 1);
+}
+
+#[test]
+fn xta_envelope_without_betreff_leaves_it_empty() {
+    let anfrage = Anfrage::build(base_input()).expect("valid");
+    let xta = anfrage.to_xta(None).expect("serialize");
+    assert!(xta.contains("<XTA betreff=\"\">"));
+    rmeld::validate(xta.as_bytes()).expect("empty betreff must still validate");
+}
+
+#[test]
+fn xta_envelope_escapes_the_betreff() {
+    let anfrage = Anfrage::build(base_input()).expect("valid");
+    let xta = anfrage.to_xta(Some(r#"A & "B" <C>"#)).expect("serialize");
+    let Message::Anfrage0600(_) = Message::parse(xta.as_bytes()).expect("escaped betreff parses")
+    else {
+        panic!("expected 0600 echo");
+    };
+    assert!(xta.contains(r#"betreff="A &amp; &quot;B&quot; &lt;C&gt;""#));
+}

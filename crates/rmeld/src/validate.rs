@@ -220,8 +220,8 @@ fn is_working_xmllint(path: &Path) -> bool {
 /// element. Returns `Ok(())` or [`Error::SchemaViolations`] with xmllint's
 /// report verbatim.
 pub fn validate(instance: &[u8]) -> Result<(), Error> {
-    let kind = sniff_schema_kind(instance)?;
-    validate_as(instance, kind)
+    let (kind, instance) = sniff_and_unwrap(instance)?;
+    validate_as(&instance, kind)
 }
 
 /// Validate against a specific schema set, regardless of the root element.
@@ -255,24 +255,55 @@ pub fn validate_as(instance: &[u8], kind: SchemaKind) -> Result<(), Error> {
     Err(Error::SchemaViolations(stderr.trim().to_string()))
 }
 
-/// Sniff the root element's local name to pick the schema set.
-fn sniff_schema_kind(instance: &[u8]) -> Result<SchemaKind, Error> {
+/// Sniff the root element and pick the schema set; an `<XTA>` envelope
+/// root (the transport-file convention, case-insensitive like rosci's
+/// sniff) is unwrapped: the returned instance bytes are the fachlich
+/// message inside, ready for xmllint (the envelope itself has no schema).
+fn sniff_and_unwrap(instance: &[u8]) -> Result<(SchemaKind, Vec<u8>), Error> {
+    use quick_xml::events::Event;
     let mut reader = quick_xml::Reader::from_reader(instance);
     reader.config_mut().trim_text(true);
+    let mut in_envelope = false;
     loop {
+        let pos_before_read = reader.buffer_position() as usize;
         let event = reader
             .read_event()
             .map_err(|e| Error::Malformed(format!("xml error: {e}")))?;
         match event {
-            quick_xml::events::Event::Start(start) => {
+            Event::Start(start) => {
                 let root = String::from_utf8_lossy(start.local_name().as_ref()).into_owned();
+                if in_envelope {
+                    // Inner message root: pos_before_read is the element's
+                    // start offset; the span walker gives the matching
+                    // End — the message bytes in between are the instance.
+                    let span = inner_element_span(instance, pos_before_read)?;
+                    let instance = instance[span.0..span.1].to_vec();
+                    return match root.as_str() {
+                        "melderegisterauskunfteinfach.anforderung.0600"
+                        | "melderegisterauskunfteinfach.antwort.0601" => {
+                            Ok((SchemaKind::Melderegisterauskunft, instance))
+                        }
+                        "administration.returntosender.0900"
+                        | "administration.returntosender.0910" => {
+                            Ok((SchemaKind::Administration, instance))
+                        }
+                        other => Err(Error::UnknownMessage {
+                            root: other.to_string(),
+                            namespace: "(unknown)".to_string(),
+                        }),
+                    };
+                }
+                if root.eq_ignore_ascii_case("XTA") {
+                    in_envelope = true;
+                    continue;
+                }
                 return match root.as_str() {
                     "melderegisterauskunfteinfach.anforderung.0600"
                     | "melderegisterauskunfteinfach.antwort.0601" => {
-                        Ok(SchemaKind::Melderegisterauskunft)
+                        Ok((SchemaKind::Melderegisterauskunft, instance.to_vec()))
                     }
                     "administration.returntosender.0900" | "administration.returntosender.0910" => {
-                        Ok(SchemaKind::Administration)
+                        Ok((SchemaKind::Administration, instance.to_vec()))
                     }
                     other => Err(Error::UnknownMessage {
                         root: other.to_string(),
@@ -280,8 +311,41 @@ fn sniff_schema_kind(instance: &[u8]) -> Result<SchemaKind, Error> {
                     }),
                 };
             }
-            quick_xml::events::Event::Eof => {
+            Event::Eof => {
                 return Err(Error::Malformed("no root element found".to_string()));
+            }
+            _ => {}
+        }
+    }
+}
+
+/// The inner message element spans from the Start event at `start_pos`
+/// (the reader position just before that Start was consumed) to its
+/// matching End. Walks the events from `start_pos` tracking depth and
+/// returns the end offset of the matching End event.
+fn inner_element_span(instance: &[u8], start_pos: usize) -> Result<(usize, usize), Error> {
+    use quick_xml::events::Event;
+    let mut reader = quick_xml::Reader::from_reader(&instance[start_pos..]);
+    reader.config_mut().trim_text(true);
+    let mut depth = 0usize;
+    loop {
+        let event = reader
+            .read_event()
+            .map_err(|e| Error::Malformed(format!("xml error: {e}")))?;
+        match event {
+            Event::Start(_) => depth += 1,
+            Event::Empty(_) => {}
+            Event::End(_) => {
+                depth = depth.saturating_sub(1);
+                if depth == 0 {
+                    let end = start_pos + reader.buffer_position() as usize;
+                    return Ok((start_pos, end));
+                }
+            }
+            Event::Eof => {
+                return Err(Error::Malformed(
+                    "XTA envelope: inner message element is not closed".to_string(),
+                ));
             }
             _ => {}
         }

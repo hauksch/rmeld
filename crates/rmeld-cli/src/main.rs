@@ -59,6 +59,11 @@ enum Cmd {
         /// JSON input file per the AnfrageInput contract (docs/STANDARD-NOTES.md)
         #[arg(value_name = "INPUT.json")]
         input: String,
+        /// Betreff of the delivery (the free OSCI 1.2 Subject string).
+        /// Intermediary convention — see docs/STANDARD-NOTES.md §7.
+        /// Empty when not supplied.
+        #[arg(long, value_name = "BETREFF", default_value = "")]
+        betreff: String,
     },
     /// Parse a 0601 answer (or RTS 0900/0910), print the classification
     /// and the structured result; exit code carries the verdict.
@@ -94,7 +99,7 @@ fn main() -> ExitCode {
 
 fn run(cli: Cli) -> Result<ExitCode, Error> {
     match cli.cmd {
-        Cmd::Create { input } => cmd_create(&input),
+        Cmd::Create { input, betreff } => cmd_create(&input, &betreff),
         Cmd::Check {
             message,
             validate: do_validate,
@@ -103,18 +108,20 @@ fn run(cli: Cli) -> Result<ExitCode, Error> {
     }
 }
 
-fn cmd_create(input: &str) -> Result<ExitCode, Error> {
+fn cmd_create(input: &str, betreff: &str) -> Result<ExitCode, Error> {
     let json = read_input(input)?;
     let parsed: rmeld::AnfrageInput = serde_json::from_slice(&json)
         .map_err(|e| Error::InvalidInput(format!("JSON contract: {e}")))?;
     let anfrage = Anfrage::build(parsed)?;
-    let xml = anfrage.to_xml()?;
+    // The XTA transport file: convention envelope, Betreff on the root.
+    let xta = anfrage.to_xta(Some(betreff))?;
     // Create is fail-fast end to end: what leaves this tool is proven
-    // against the official schema, not hopefully correct.
-    if let Err(e) = rmeld::validate(xml.as_bytes()) {
+    // against the official schema, not hopefully correct — the gate sees
+    // through the envelope to the fachlich message.
+    if let Err(e) = rmeld::validate(xta.as_bytes()) {
         return Err(Error::from_rmeld(e));
     }
-    println!("{xml}");
+    println!("{xta}");
     Ok(ExitCode::SUCCESS)
 }
 
