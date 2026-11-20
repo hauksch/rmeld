@@ -327,9 +327,11 @@ XSDs; the library's `to_xml()` still emits the bare message.
    Behördenkennung comes from the broker's onboarding documentation
    (constant gateway value or per-Behörde mapping), not from a DVDV
    lookup — one more item for the same contract conversation.
-6. **CI has not run yet** — no git remote is configured, so the
-   workflows (fmt/clippy/test/cargo-deny on GitHub runners with libxml2
-   2.15) are exercised locally only. Push to GitHub to arm them.
+6. **CI verified on GitHub** (was an assumption until 2026-11-20):
+   the repo lives at github.com/hauksch/rmeld; the first push ran the
+   full gate on GitHub runners — fmt, clippy `-D warnings`,
+   `cargo test --workspace` (xmllint via libxml2-utils), cargo-deny
+   (advisories/licenses/sources) and the weekly audit — all green.
 
 ## 9. Source register
 
