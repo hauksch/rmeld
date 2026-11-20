@@ -13,24 +13,17 @@ simple person search — between a Fachanwendung and the OSCI transport
 stack ([rosci](https://github.com/hauksch/rosci)). Payloads cross rosci
 as opaque bytes; rmeld owns exactly the xMeld XML.
 
-## ⚠️ The message number is 0600/0601 — „602.1“ does not exist
+## A note on the message number
 
-The project brief asked for „xMeld 602.1“. **No xMeld release (1.7 →
-27.05) contains a message 602.1** — not in any specification, XSD set,
-or the official Nachrichten code list. The actual message pair, per the
-vendored schemas:
-
-- **0600** `melderegisterauskunfteinfach.anforderung.0600` — „Anfrage zur
-  einfachen Melderegisterauskunft“
-- **0601** `melderegisterauskunfteinfach.antwort.0601` — „Antwort zur
-  einfachen Melderegisterauskunft“ (positive, neutral and rejection
-  variants ride in this one message)
-- 0602–0604 are the **gemeindeübergreifend** family — different flow,
-  out of scope here.
-
-The verification, taxonomy and every other standard fact live in
-[docs/STANDARD-NOTES.md](docs/STANDARD-NOTES.md); schema sources and
-checksums in [schema/PROVENANCE.md](schema/PROVENANCE.md).
+The project brief asked for „xMeld 602.1“; no such message exists in
+any xMeld release. The implemented pair is **Nachricht 0600**
+(„Anfrage zur einfachen Melderegisterauskunft“) and **Nachricht 0601**
+(„Antwort zur einfachen Melderegisterauskunft“) — verified against the
+vendored schemas and the official specification. The full correction
+record lives in
+[docs/STANDARD-NOTES.md](docs/STANDARD-NOTES.md), which also carries
+every other standard fact this crate encodes, with sources and the
+honest list of remaining assumptions.
 
 ## Why?
 
@@ -64,11 +57,11 @@ rmeld create anfrage.json > meldung.xta
 rmeld create anfrage.json --betreff "XMeld 26.11 Melderegisterauskunft" > meldung.xta
 
 # Read a 0601 answer (or RTS 0900/0910): verdict on stdout, exit code carries it
-rmeld check antwort.xml
-rmeld check antwort.xml --json      # structured result instead of prose
+rmeld check antwort.xta
+rmeld check antwort.xta --json      # structured result instead of prose
 
 # Offline schema gate against the vendored XMeld 26.11 schemas:
-rmeld validate message.xml
+rmeld validate meldung.xta
 ```
 
 Exit codes: `0` fulfilled/ok · `2` usage, invalid input or schema
@@ -111,13 +104,23 @@ documented in docs/STANDARD-NOTES.md.
 - Live intermediary tests do not exist; nothing here has spoken to a
   real Meldebehörde yet.
 
+## Documentation
+
+- [docs/STANDARD-NOTES.md](docs/STANDARD-NOTES.md) — the standard facts
+  rmeld encodes (message types, wire rules, code lists, taxonomy), the
+  verification record, and the honest list of remaining assumptions.
+- [schema/PROVENANCE.md](schema/PROVENANCE.md) — where the vendored
+  schemas come from, with checksums.
+- [docs/HANDOFF.md](docs/HANDOFF.md) — the historical briefing the
+  project started from (its premises are corrected in
+  STANDARD-NOTES.md).
+- [crates/rmeld/tests/FIXTURES.md](crates/rmeld/tests/FIXTURES.md) —
+  what the fixtures are and where they come from.
+
 ## Ground rules
 
 1. Scope discipline: 0600/0601 (+ RTS as the technical-fault vehicle)
-   only. No generic xMeld plumbing „for later“; gemeindeübergreifend is
-   phase-3 material. The `<XTA>` envelope turned out to have **no
-   normative schema** (docs/STANDARD-NOTES.md §7) — it stays an
-   intermediary contract item, not rmeld code.
+   only — no generic xMeld plumbing „for later“.
 2. Every standard fact cites the vendored schemas; assumptions are
    listed as assumptions (docs/STANDARD-NOTES.md §8), never disguised as
    facts.

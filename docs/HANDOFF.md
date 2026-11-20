@@ -1,5 +1,12 @@
 # rmeld — agent handoff brief
 
+> **Status: historical.** This is the briefing the project started
+> from, kept verbatim as a record. Its working assumptions were
+> corrected during implementation — most notably the message number
+> („602.1" does not exist; the implemented pair is 0600/0601) — see
+> docs/STANDARD-NOTES.md for the verified facts. The rmeld Handoff brief
+> is not maintained.
+
 You are taking over an **empty repository**. Nothing is implemented, by
 design. This file is the complete briefing; the human has stepped away.
 Read it fully before writing any code.
